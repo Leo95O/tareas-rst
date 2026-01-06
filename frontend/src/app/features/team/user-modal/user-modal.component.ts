@@ -49,13 +49,13 @@ export class UserModalComponent implements OnInit, OnChanges {
     this.userForm = this.fb.group({
       usuario_nombre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
       usuario_correo: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.minLength(6)]],
+      usuario_password: ['', [Validators.minLength(6)]],
       rol_id: [null, Validators.required],
       usuario_estado: [true], // Boolean for toggle switch
     });
 
     // Validación condicional: password requerido solo en modo creación
-    this.userForm.get('password')?.valueChanges.subscribe(() => {
+  this.userForm.get('usuario_password')?.valueChanges.subscribe(() => {
       this.updatePasswordValidation();
     });
   }
@@ -64,7 +64,7 @@ export class UserModalComponent implements OnInit, OnChanges {
    * Actualizar validación de password según modo
    */
   private updatePasswordValidation(): void {
-    const passwordControl = this.userForm.get('password');
+    const passwordControl = this.userForm.get('usuariopassword');
     const nombreControl = this.userForm.get('usuario_nombre');
 
     if (!this.isEditMode) {
@@ -89,7 +89,7 @@ export class UserModalComponent implements OnInit, OnChanges {
       this.userForm.patchValue({
         usuario_nombre: this.user.usuario_nombre,
         usuario_correo: this.user.usuario_correo,
-        password: '', // Password vacío en edición
+        usuario_password: '', // Password vacío en edición
         rol_id: this.user.rol_id,
         usuario_estado: this.user.usuario_estado === 1, // Convert number to boolean
       });
@@ -99,7 +99,7 @@ export class UserModalComponent implements OnInit, OnChanges {
       this.userForm.reset({
         usuario_nombre: '',
         usuario_correo: '',
-        password: '',
+        usuario_password: '',
         rol_id: null,
         usuario_estado: true,
       });
@@ -137,8 +137,8 @@ export class UserModalComponent implements OnInit, OnChanges {
         updateData.usuario_correo = formValue.usuario_correo;
       }
 
-      if (formValue.password && formValue.password.trim() !== '') {
-        updateData.password = formValue.password;
+      if (formValue.usuario_password && formValue.usuario_password.trim() !== '') {
+        updateData.usuario_password = formValue.usuario_password;
       }
 
       if (formValue.rol_id !== this.user?.rol_id) {
@@ -158,7 +158,7 @@ export class UserModalComponent implements OnInit, OnChanges {
       const createData: CreateUserDto = {
         usuario_nombre: formValue.usuario_nombre,
         usuario_correo: formValue.usuario_correo,
-        password: formValue.password,
+        usuario_password: formValue.usuario_password,
         rol_id: formValue.rol_id,
       };
 
