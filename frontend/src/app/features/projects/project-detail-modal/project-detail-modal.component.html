@@ -1,0 +1,88 @@
+<p-dialog [(visible)]="visible" [modal]="true" [draggable]="false" [resizable]="false" [closable]="true"
+    header="Detalle del Proyecto" [style]="{ width: '700px', maxHeight: '90vh' }"
+    [contentStyle]="{ 'overflow-y': 'auto', 'max-height': 'calc(90vh - 120px)' }" (onHide)="closeModal()">
+    @if (project) {
+    <div class="space-y-6">
+        <!-- Header con icono y título -->
+        <div class="flex items-start gap-5 pb-4 border-b border-gray-200">
+            <div
+                class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                {{ getProjectInitials() }}
+            </div>
+            <div class="flex-1">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ project.nombre }}</h2>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-3 py-1 text-sm font-medium rounded-full text-white"
+                        [style.background-color]="getEstadoColor()">
+                        {{ project.estado_nombre || 'Sin estado' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="bg-gray-50 rounded-lg p-4">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                <i class="pi pi-align-left mr-2"></i>Descripción
+            </h3>
+            <p class="text-gray-700 whitespace-pre-wrap">
+                {{ project.descripcion || 'Sin descripción' }}
+            </p>
+        </div>
+
+        <!-- Grid de información principal -->
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Sucursal -->
+            <div class="bg-indigo-50 rounded-lg p-4">
+                <h3 class="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-1">
+                    <i class="pi pi-building mr-2"></i>Sucursal
+                </h3>
+                <p class="text-gray-800 font-medium text-lg">{{ project.sucursal_nombre || 'No especificada' }}</p>
+            </div>
+
+            <!-- Creado por -->
+            <div class="bg-blue-50 rounded-lg p-4">
+                <h3 class="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">
+                    <i class="pi pi-user mr-2"></i>Creado por
+                </h3>
+                <p class="text-gray-800 font-medium text-lg">{{ project.creador_nombre || 'Desconocido' }}</p>
+            </div>
+
+            <!-- Fecha de inicio -->
+            <div class="bg-green-50 rounded-lg p-4">
+                <h3 class="text-sm font-semibold text-green-600 uppercase tracking-wide mb-1">
+                    <i class="pi pi-calendar mr-2"></i>Fecha de Inicio
+                </h3>
+                <p class="text-gray-800 font-medium">{{ formatDate(project.fecha_inicio) }}</p>
+            </div>
+
+            <!-- Fecha de fin -->
+            <div class="bg-orange-50 rounded-lg p-4">
+                <h3 class="text-sm font-semibold text-orange-600 uppercase tracking-wide mb-1">
+                    <i class="pi pi-calendar-times mr-2"></i>Fecha de Fin
+                </h3>
+                <p class="text-gray-800 font-medium">{{ formatDate(project.fecha_fin) }}</p>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="border-t border-gray-200 pt-4">
+            <div class="flex justify-between text-sm text-gray-500">
+                <span>
+                    <i class="pi pi-clock mr-1"></i>
+                    Creado: {{ formatDate(project.fecha_creacion) }}
+                </span>
+                <span class="text-gray-400">ID: #{{ project.id }}</span>
+            </div>
+        </div>
+    </div>
+    }
+
+    <ng-template pTemplate="footer">
+        <div class="flex justify-between">
+            <button pButton label="Cerrar" class="p-button-text" icon="pi pi-times" (click)="closeModal()"></button>
+            <button pButton label="Editar Proyecto" class="p-button-primary" icon="pi pi-pencil"
+                (click)="editProject()"></button>
+        </div>
+    </ng-template>
+</p-dialog>

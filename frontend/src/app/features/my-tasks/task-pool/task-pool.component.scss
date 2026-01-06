@@ -1,0 +1,12 @@
+// Estilos mínimos ya que usamos Tailwind y app-task-card
+// El diseño principal viene del container y las clases de Tailwind
+
+.task-pool-item {
+    display: flex;
+    flex-direction: column;
+
+    // Aseguramos que el card ocupe todo el espacio disponible
+    app-task-card {
+        flex: 1;
+    }
+}

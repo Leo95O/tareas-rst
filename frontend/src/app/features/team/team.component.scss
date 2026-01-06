@@ -1,0 +1,32 @@
+/* Estilos específicos del componente team */
+.team-container {
+  padding: 1.5rem;
+}
+
+:host ::ng-deep {
+  .p-datatable .p-datatable-thead > tr > th {
+    background-color: #f9fafb;
+    color: #374151;
+    font-weight: 600;
+    padding: 1rem;
+  }
+
+  .p-datatable .p-datatable-tbody > tr {
+    transition: background-color 0.2s;
+  }
+
+  .p-datatable .p-datatable-tbody > tr:hover {
+    background-color: #f9fafb;
+  }
+
+  .p-paginator {
+    padding: 1rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .p-datatable .p-datatable-caption {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #ffffff;
+  }
+}

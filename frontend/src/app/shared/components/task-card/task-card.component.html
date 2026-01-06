@@ -1,0 +1,100 @@
+<p-card styleClass="h-full hover:shadow-lg transition-shadow duration-200">
+  <ng-template pTemplate="header">
+    <!-- Tag de estado y proyecto -->
+    <div class="px-4 pt-4 flex justify-between items-start">
+      <div class="flex flex-col gap-2">
+        <!-- Badge de Estado -->
+        <span class="px-2 py-0.5 text-xs font-semibold rounded-full inline-block w-fit"
+          [ngClass]="getEstadoBadgeClasses()">
+          {{ task.estado }}
+        </span>
+
+        <!-- Badge de Proyecto -->
+        <span class="inline-block px-3 py-1 text-xs font-medium rounded-full" [ngClass]="{
+            'bg-purple-100 text-purple-700': task.proyecto
+              .toLowerCase()
+              .includes('copywriting'),
+            'bg-blue-100 text-blue-700':
+              task.proyecto.toLowerCase().includes('ui design') ||
+              task.proyecto.toLowerCase().includes('design'),
+            'bg-green-100 text-green-700': task.proyecto
+              .toLowerCase()
+              .includes('illustration')
+          }">
+          {{ task.proyecto }}
+        </span>
+
+        <!-- Badge de Prioridad -->
+        <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full text-white"
+          [style.background-color]="getPriorityColor()">
+          {{ task.prioridad || 'Sin prioridad' }}
+        </span>
+      </div>
+
+      <!-- Botón de editar -->
+      <button
+        class="p-1.5 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none cursor-pointer"
+        (click)="editTask()" title="Editar tarea">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+          class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM17.25 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+        </svg>
+      </button>
+    </div>
+  </ng-template>
+
+  <ng-template pTemplate="content">
+    <!-- Título de la tarea (clickeable para ver detalle) -->
+    <h3
+      class="text-gray-800 font-medium text-base mb-3 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors"
+      (click)="openDetail()">
+      {{ task.titulo }}
+    </h3>
+
+    <!-- Descripción (opcional) -->
+    @if (task.descripcion) {
+    <p class="text-gray-500 text-sm mb-4 line-clamp-2">
+      {{ task.descripcion }}
+    </p>
+    }
+
+    <!-- Footer con metadatos -->
+    <div class="flex items-center justify-between text-xs text-gray-400 mt-4">
+      <!-- Fecha de vencimiento -->
+      <div class="flex items-center gap-1">
+        <i class="pi pi-calendar text-xs" [ngClass]="{ 'text-red-500': isOverdue() }"></i>
+        <span [ngClass]="{ 'text-red-500 font-semibold': isOverdue() }">
+          {{ formatDate(task.fecha_limite) || 'Sin fecha' }}
+        </span>
+      </div>
+
+      <!-- Comentarios y adjuntos -->
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1">
+          <i class="pi pi-paperclip text-xs"></i>
+          <span></span>
+        </div>
+      </div>
+
+      <!-- Avatar del usuario asignado -->
+      <div class="flex items-center">
+        @if (task.usuario_asignado_id) {
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold" [ngClass]="{
+            'bg-blue-500': task.usuario_asignado_id % 4 === 0,
+            'bg-purple-500': task.usuario_asignado_id % 4 === 1,
+            'bg-green-500': task.usuario_asignado_id % 4 === 2,
+            'bg-orange-500': task.usuario_asignado_id % 4 === 3
+          }" [title]="task.usuario_asignado_nombre">
+          {{ task.usuario_asignado_nombre.charAt(0).toUpperCase() }}
+        </div>
+        } @else {
+        <div class="w-7 h-7 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xs"
+          title="Sin asignar">
+          <i class="pi pi-user text-xs"></i>
+        </div>
+        }
+      </div>
+    </div>
+  </ng-template>
+</p-card>

@@ -1,0 +1,66 @@
+<div class="min-h-screen flex items-center justify-center bg-white px-4 py-12">
+  <p-toast />
+
+  <div class="w-full max-w-md">
+    <!-- Apple-style minimalist card -->
+    <div class="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
+      <!-- Header -->
+      <div class="text-center pt-12 pb-8 px-8">
+        <h1 class="text-4xl font-semibold text-gray-900 mb-2 tracking-tight">Bienvenido</h1>
+        <p class="text-base text-gray-500">Inicia sesión en Task Manager</p>
+      </div>
+
+      <!-- Form Content -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="px-8 pb-8">
+        <!-- Email Field -->
+        <div class="mb-5">
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico</label>
+          <input pInputText id="email" formControlName="email" type="email" placeholder="ejemplo@correo.com"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 text-gray-900 placeholder-gray-400"
+            [class.border-red-300]="
+              hasError('email', 'required') || hasError('email', 'email')
+            " [class.focus:ring-red-100]="
+              hasError('email', 'required') || hasError('email', 'email')
+            " />
+
+          @if (hasError('email', 'required')) {
+          <small class="block mt-2 text-xs text-red-600">El correo es requerido</small>
+          } @if (hasError('email', 'email')) {
+          <small class="block mt-2 text-xs text-red-600">Ingrese un correo válido</small>
+          }
+        </div>
+
+        <!-- Password Field -->
+        <div class="mb-8">
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
+          <p-password formControlName="password" inputId="password" placeholder="••••••••" [feedback]="false"
+            [toggleMask]="true" styleClass="w-full"
+            inputStyleClass="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 text-gray-900 placeholder-gray-400"
+            [class.border-red-300]="
+              hasError('password', 'required') || hasError('password', 'minlength')
+            " />
+
+          @if (hasError('password', 'required')) {
+          <small class="block mt-2 text-xs text-red-600">La contraseña es requerida</small>
+          } @if (hasError('password', 'minlength')) {
+          <small class="block mt-2 text-xs text-red-600">La contraseña debe tener al menos 6 caracteres</small>
+          }
+        </div>
+
+        <!-- Submit Button -->
+        <button pButton type="submit" label="Iniciar Sesión" icon="pi pi-arrow-right" iconPos="right"
+          class="w-full bg-blue-600 hover:bg-blue-700 border-0 rounded-xl px-6 py-3.5 text-base font-semibold text-white shadow-sm hover:shadow-md transition-all duration-200"
+          [disabled]="isLoading()" [loading]="isLoading()"></button>
+      </form>
+
+      <!-- Additional Apple-style bottom text -->
+      <div class="text-center mt-6">
+        <p class="text-sm text-gray-500">
+          ¿Necesitas ayuda?
+          <a href="#" class="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200">Contacta
+            soporte</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

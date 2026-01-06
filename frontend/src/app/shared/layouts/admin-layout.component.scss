@@ -1,0 +1,18 @@
+// Admin Layout Styles
+.admin-layout {
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+// Header customization
+header {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+// Drawer menu items hover effect
+nav button {
+  &:hover {
+    transform: translateX(4px);
+  }
+}

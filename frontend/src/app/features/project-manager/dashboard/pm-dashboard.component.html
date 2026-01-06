@@ -1,0 +1,155 @@
+<div class="pm-dashboard bg-white min-h-screen p-6">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Dashboard Operativo</h1>
+    <p class="mt-1 text-sm text-gray-500">Avance de proyectos y carga de trabajo del equipo</p>
+  </div>
+
+  <!-- KPIs Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <!-- Proyectos Activos -->
+    <div class="rounded-lg bg-white p-6 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-500">Proyectos Activos</p>
+          <p class="mt-2 text-3xl font-bold text-blue-600">{{ proyectosActivos() }}</p>
+        </div>
+        <div class="rounded-full bg-blue-100 p-3">
+          <i class="pi pi-briefcase text-2xl text-blue-600"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tareas Vencidas -->
+    <div class="rounded-lg bg-white p-6 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-500">Tareas Vencidas</p>
+          <p class="mt-2 text-3xl font-bold text-red-600">{{ tareasVencidasEquipo() }}</p>
+        </div>
+        <div class="rounded-full bg-red-100 p-3">
+          <i class="pi pi-exclamation-triangle text-2xl text-red-600"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Tareas -->
+    <div class="rounded-lg bg-white p-6 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-500">Total Tareas</p>
+          <p class="mt-2 text-3xl font-bold text-gray-800">{{ totalTareasEquipo() }}</p>
+        </div>
+        <div class="rounded-full bg-gray-100 p-3">
+          <i class="pi pi-list text-2xl text-gray-600"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Completadas -->
+    <div class="rounded-lg bg-white p-6 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-500">Completadas</p>
+          <p class="mt-2 text-3xl font-bold text-green-600">{{ tareasCompletadasEquipo() }}</p>
+        </div>
+        <div class="rounded-full bg-green-100 p-3">
+          <i class="pi pi-check-circle text-2xl text-green-600"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tareas Vencidas - Alerta -->
+  @if (tareasVencidasEquipo() > 0) {
+  <div class="mt-6 rounded-lg bg-red-50 border border-red-200 p-4">
+    <div class="flex items-start gap-3">
+      <i class="pi pi-exclamation-triangle text-2xl text-red-600 mt-1"></i>
+      <div class="flex-1">
+        <h3 class="font-semibold text-red-800 mb-1">Atención: Tareas Vencidas</h3>
+        <p class="text-sm text-red-700">
+          Hay <span class="font-bold">{{ tareasVencidasEquipo() }}</span> tarea(s) vencida(s) que
+          requieren atención inmediata. Revisa el tablero del equipo para priorizar.
+        </p>
+      </div>
+      <button pButton label="Ver Tablero" icon="pi pi-arrow-right" class="p-button-sm p-button-danger"
+        routerLink="/project-manager/tablero-equipo"></button>
+    </div>
+  </div>
+  }
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-10">
+    <!-- Proyectos con Progreso -->
+    <div class="rounded-lg bg-white shadow-sm border border-gray-100">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h2 class="text-lg font-bold text-gray-800">Avance de Proyectos</h2>
+      </div>
+      <div class="p-6">
+        @if (proyectosConProgreso().length > 0) {
+        <div class="space-y-4">
+          @for (proyecto of proyectosConProgreso(); track proyecto.proyecto_nombre) {
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-gray-700">{{ proyecto.proyecto_nombre }}</span>
+              <span class="text-sm text-gray-500">{{ proyecto.progreso }}%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+              <div class="h-2.5 rounded-full transition-all duration-300"
+                [ngClass]="getProgressBarColor(proyecto.progreso)" [style.width.%]="proyecto.progreso"></div>
+            </div>
+            <div class="mt-1 text-xs text-gray-500">
+              {{ proyecto.tareasCompletadas }} de {{ proyecto.totalTareas }} tareas completadas
+            </div>
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="text-center py-8">
+          <i class="pi pi-inbox text-4xl text-gray-300 mb-3"></i>
+          <p class="text-gray-500">No hay proyectos activos</p>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Carga de Trabajo por Usuario -->
+    <div class="rounded-lg bg-white shadow-sm border border-gray-100">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h2 class="text-lg font-bold text-gray-800">Carga de Trabajo del Equipo</h2>
+      </div>
+      <div class="p-6">
+        @if (cargaTrabajoPorUsuario().length > 0) {
+        <div class="space-y-4">
+          @for (usuario of cargaTrabajoPorUsuario(); track usuario.nombre) {
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <div
+                  class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-semibold">
+                  {{ usuario.nombre.substring(0, 2).toUpperCase() }}
+                </div>
+                <span class="text-sm font-medium text-gray-700">{{ usuario.nombre }}</span>
+              </div>
+              <span class="text-sm text-gray-500">{{ usuario.count }} tareas</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                [style.width.%]="getCargaPercentage(usuario.count)"></div>
+            </div>
+            <div class="mt-1 text-xs text-gray-500">{{ usuario.completadas }} completadas</div>
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="text-center py-8">
+          <i class="pi pi-users text-4xl text-gray-300 mb-3"></i>
+          <p class="text-gray-500">No hay tareas asignadas</p>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<p-toast></p-toast>

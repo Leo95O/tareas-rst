@@ -1,0 +1,24 @@
+# --- Dependencias PHP ---
+/vendor/
+
+# --- Seguridad ---
+.env
+.env.local
+.env.backup
+
+# --- Logs y Archivos Temporales ---
+# Ignorar todos los archivos dentro de logs, pero mantener la carpeta
+/logs/*
+!/logs/.gitkeep
+
+# --- IDEs y Sistema Operativo ---
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Otros ---
+/temp/
+db.sql
+tokens.txt

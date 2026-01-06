@@ -1,0 +1,642 @@
+{
+    "info": {
+        "_postman_id": "pro-task-collection-v1",
+        "name": "ProTask API",
+        "description": "Colección de endpoints para el sistema de gestión de tareas ProTask.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost/pro-task/backend/public",
+            "type": "string"
+        },
+        {
+            "key": "token_admin",
+            "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjcmVhY2lvbiI6MTc2NDg5NjE2OSwiZXhwaXJhY2lvbiI6MTc2NDk4MjU2OSwiZGF0YSI6eyJpZCI6MSwibm9tYnJlIjoiQWRtaW5jaXRvIiwiY29ycmVvIjoiYWRtaW5AcHJ1ZWJhLmNvbSIsInJvbCI6MX19.yOumIkOofytKuQ-yyVQqo5uYgLuoOb2pDUCe9J20UNE",
+            "type": "string"
+        },
+        {
+            "key": "token_user",
+            "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjcmVhY2lvbiI6MTc2NDg5NjU3NCwiZXhwaXJhY2lvbiI6MTc2NDk4Mjk3NCwiZGF0YSI6eyJpZCI6NSwibm9tYnJlIjoiUGVkcm8gR2FsdmV6IiwiY29ycmVvIjoicGVkcmlsbG9AcmVzdGF1cmFudC5jb20iLCJyb2wiOjN9fQ.olCetwZujCw1rTOtpD-PyGAbHbBr1wZYF1CUlQYKrj4",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Usuarios",
+            "item": [
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"usuario_correo\": \"admin@prueba.com\",\n    \"usuario_password\": \"123456\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "login"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Registro",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"usuario_nombre\": \"Nuevo Usuario\",\n    \"usuario_correo\": \"nuevo@test.com\",\n    \"usuario_password\": \"123456\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/registro",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "registro"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Perfil (Auth)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_user}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/perfil",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "perfil"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Admin - Listar Todos",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_admin}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/admin/listar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "admin",
+                                "listar"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Admin - Crear Usuario",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_admin}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"usuario_nombre\": \"Usuario Creado por Admin\",\n    \"usuario_correo\": \"admin_created@test.com\",\n    \"usuario_password\": \"123456\",\n    \"rol_id\": 2\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/admin/crear",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "admin",
+                                "crear"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Admin - Editar Usuario",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_admin}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"usuario_nombre\": \"Usuario Editado\",\n    \"rol_id\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/admin/editar/5",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "admin",
+                                "editar",
+                                "5"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Admin - Eliminar Usuario",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_admin}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/admin/eliminar/5",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "admin",
+                                "eliminar",
+                                "5"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Tareas",
+            "item": [
+                {
+                    "name": "Listar Tareas",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_user}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/tareas/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tareas",
+                                ""
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Crear Tarea",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_user}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"titulo\": \"Nueva Tarea Demo\",\n    \"descripcion\": \"Descripción de prueba\",\n    \"proyecto_id\": 1,\n    \"fecha_limite\": \"2025-12-31\",\n    \"categoria_id\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/tareas/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tareas",
+                                ""
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Editar Tarea",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_user}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"titulo\": \"Tarea Editada\",\n    \"estado_id\": 2\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/tareas/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tareas",
+                                "1"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Eliminar Tarea",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_user}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/tareas/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tareas",
+                                "1"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Proyectos",
+            "item": [
+                {
+                    "name": "Listar Proyectos",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_user}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/proyectos/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "proyectos",
+                                ""
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Crear Proyecto (Admin)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_admin}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Proyecto Alpha\",\n    \"descripcion\": \"Proyecto principal\",\n    \"fecha_inicio\": \"2025-01-01\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/proyectos/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "proyectos",
+                                ""
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Editar Proyecto (Admin)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_admin}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nombre\": \"Proyecto Alpha Editado\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/proyectos/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "proyectos",
+                                "1"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Eliminar Proyecto (Admin)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_admin}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/proyectos/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "proyectos",
+                                "1"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "DataMaster",
+            "item": [
+                {
+                    "name": "Categorías",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_user}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/datamaster/categorias",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "datamaster",
+                                "categorias"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Prioridades",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_user}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/datamaster/prioridades",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "datamaster",
+                                "prioridades"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Estados",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_user}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/datamaster/estados",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "datamaster",
+                                "estados"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Reportes",
+            "item": [
+                {
+                    "name": "Dashboard (Admin)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_admin}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/reportes/dashboard",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reportes",
+                                "dashboard"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ]
+}
