@@ -64,7 +64,7 @@ export class UserModalComponent implements OnInit, OnChanges {
    * Actualizar validación de password según modo
    */
   private updatePasswordValidation(): void {
-    const passwordControl = this.userForm.get('usuariopassword');
+    const passwordControl = this.userForm.get('usuario_password');
     const nombreControl = this.userForm.get('usuario_nombre');
 
     if (!this.isEditMode) {

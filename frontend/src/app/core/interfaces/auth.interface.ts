@@ -9,7 +9,7 @@ import { User } from './user.interface';
  */
 export interface LoginRequest {
   usuario_correo: string;
-  password: string;
+  usuario_password: string;
 }
 
 /**
