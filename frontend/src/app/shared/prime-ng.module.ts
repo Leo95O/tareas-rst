@@ -1,21 +1,23 @@
 import { NgModule } from '@angular/core';
 
-// PrimeNG Modules
+// Componentes Básicos
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { CardModule } from 'primeng/card';
 import { ToastModule } from 'primeng/toast';
-import { DrawerModule } from 'primeng/drawer';
 import { MenubarModule } from 'primeng/menubar';
 import { DialogModule } from 'primeng/dialog';
-import { Select } from 'primeng/select';
-import { DatePicker } from 'primeng/datepicker';
 import { TextareaModule } from 'primeng/textarea';
-import { ConfirmDialog } from 'primeng/confirmdialog';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { ConfirmDialogModule } from 'primeng/confirmdialog'; // Ojo: Module
+import { DrawerModule } from 'primeng/drawer';
+
+// --- COMPONENTES MODERNOS (PrimeNG v18/v20) ---
+import { SelectModule } from 'primeng/select';           // Reemplaza a Dropdown
+import { ToggleSwitchModule } from 'primeng/toggleswitch'; // Reemplaza a InputSwitch
+import { DatePickerModule } from 'primeng/datepicker';   // Reemplaza a Calendar
 
 @NgModule({
   imports: [
@@ -24,16 +26,17 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
     PasswordModule,
     CardModule,
     ToastModule,
-    DrawerModule,
     MenubarModule,
     DialogModule,
-    Select,
-    DatePicker,
     TextareaModule,
-    ConfirmDialog,
     TableModule,
     TooltipModule,
+    ConfirmDialogModule,
+    DrawerModule,
+    // Nuevos:
+    SelectModule,
     ToggleSwitchModule,
+    DatePickerModule
   ],
   exports: [
     ButtonModule,
@@ -41,16 +44,17 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
     PasswordModule,
     CardModule,
     ToastModule,
-    DrawerModule,
     MenubarModule,
     DialogModule,
-    Select,
-    DatePicker,
     TextareaModule,
-    ConfirmDialog,
     TableModule,
     TooltipModule,
+    ConfirmDialogModule,
+    DrawerModule,
+    // Exportamos los nuevos:
+    SelectModule,
     ToggleSwitchModule,
+    DatePickerModule
   ],
 })
 export class PrimeNgModule {}

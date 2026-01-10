@@ -3,7 +3,10 @@ require_once __DIR__ . '/../config/config.php';
 
 $app = new \Slim\Slim();
 
+//Modo Local 
 $app->config('debug', true);
+//Modo Producción
+//$app->config('debug', false);
 
 $app->add(new \App\Middleware\AuthMiddleware());
 $app->add(new \App\Middleware\CorsMiddleware());

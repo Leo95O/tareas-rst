@@ -1,91 +1,53 @@
 <p-dialog [header]="modalTitle" [(visible)]="visible" [modal]="true" [draggable]="false" [resizable]="false"
   [style]="{ width: '500px' }" [appendTo]="'body'" (onHide)="onHide()">
+  
   <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
-    <!-- Nombre Completo - Solo en modo creación -->
+    
     <div class="mb-4" *ngIf="!isEditMode">
       <label for="usuario_nombre" class="mb-2 block text-sm font-medium text-gray-700">
         Nombre Completo <span class="text-red-500">*</span>
       </label>
       <input id="usuario_nombre" type="text" pInputText formControlName="usuario_nombre"
-        placeholder="Ej: Juan Pérez García" class="w-full" [ngClass]="{
-          'ng-invalid ng-dirty':
-            hasError('usuario_nombre', 'required') ||
-            hasError('usuario_nombre', 'minlength') ||
-            hasError('usuario_nombre', 'maxlength')
-        }" />
-      <small class="text-red-500" *ngIf="
-          (submitted() || userForm.get('usuario_nombre')?.touched) &&
-          userForm.get('usuario_nombre')?.errors
-        ">
-        {{ getErrorMessage('usuario_nombre') }}
-      </small>
-      <small class="text-gray-500 block mt-1">
-        <i class="pi pi-info-circle"></i> Este es el nombre real del usuario, no el alias del email
-      </small>
-    </div>
+        placeholder="Ej: Juan Pérez García" class="w-full" />
+      </div>
 
-    <!-- Email -->
     <div class="mb-4">
       <label for="usuario_correo" class="mb-2 block text-sm font-medium text-gray-700">
         Email <span class="text-red-500">*</span>
       </label>
       <input id="usuario_correo" type="email" pInputText formControlName="usuario_correo"
-        placeholder="ejemplo@correo.com" class="w-full" [ngClass]="{
-          'ng-invalid ng-dirty':
-            hasError('usuario_correo', 'required') || hasError('usuario_correo', 'email')
-        }" />
-      <small class="text-red-500" *ngIf="
-          (submitted() || userForm.get('usuario_correo')?.touched) &&
-          userForm.get('usuario_correo')?.errors
-        ">
-        {{ getErrorMessage('usuario_correo') }}
-      </small>
+        placeholder="ejemplo@correo.com" class="w-full" />
     </div>
 
-    <!-- Password -->
     <div class="mb-4">
       <label for="password" class="mb-2 block text-sm font-medium text-gray-700">
-        Contraseña
-        <span class="text-red-500" *ngIf="!isEditMode">*</span>
+        Contraseña <span class="text-red-500" *ngIf="!isEditMode">*</span>
       </label>
-      <p-password id="password" formControlName="password" [toggleMask]="true" [feedback]="false" placeholder="••••••••"
-        styleClass="w-full" inputStyleClass="w-full" [ngClass]="{
-          'ng-invalid ng-dirty':
-            hasError('password', 'required') || hasError('password', 'minlength')
-        }"></p-password>
-      <small class="text-gray-500 block mt-1" *ngIf="isEditMode">
-        <i class="pi pi-info-circle"></i> Dejar en blanco para mantener la contraseña actual
-      </small>
-      <small class="text-red-500" *ngIf="
-          (submitted() || userForm.get('password')?.touched) && userForm.get('password')?.errors
-        ">
-        {{ getErrorMessage('password') }}
-      </small>
+      <p-password id="password" formControlName="password" [toggleMask]="true" [feedback]="false" 
+        styleClass="w-full" inputStyleClass="w-full"></p-password>
     </div>
 
-    <!-- Rol -->
     <div class="mb-4">
       <label for="rol_id" class="mb-2 block text-sm font-medium text-gray-700">
         Rol <span class="text-red-500">*</span>
       </label>
-      <p-select id="rol_id" formControlName="rol_id" [options]="roles" optionLabel="nombre" optionValue="id"
-        placeholder="Selecciona un rol" styleClass="w-full" [appendTo]="'body'"
-        [ngClass]="{ 'ng-invalid ng-dirty': hasError('rol_id', 'required') }"></p-select>
-      <small class="text-red-500" *ngIf="
-          (submitted() || userForm.get('rol_id')?.touched) &&
-          userForm.get('rol_id')?.errors
-        ">
-        {{ getErrorMessage('rol_id') }}
-      </small>
+      <p-select 
+        id="rol_id" 
+        formControlName="rol_id" 
+        [options]="roles" 
+        optionLabel="nombre" 
+        optionValue="id"
+        placeholder="Selecciona un rol" 
+        styleClass="w-full" 
+        [appendTo]="'body'">
+      </p-select>
     </div>
 
-    <!-- Estado Activo -->
     <div class="mb-4 flex items-center justify-between">
-      <label for="usuario_estado" class="text-sm font-medium text-gray-700"> Estado Activo </label>
-      <p-toggleSwitch id="usuario_estado" formControlName="usuario_estado"></p-toggleSwitch>
+      <label for="usuario_estado" class="text-sm font-medium text-gray-700">Usuario Activo</label>
+      <p-toggleswitch id="usuario_estado" formControlName="usuario_estado"></p-toggleswitch>
     </div>
 
-    <!-- Buttons -->
     <div class="flex justify-end gap-2 mt-6">
       <button type="button" pButton label="Cancelar" icon="pi pi-times" class="p-button-text"
         (click)="onCancel()"></button>
