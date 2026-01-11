@@ -9,17 +9,17 @@ class Crypto
     private static $method = 'AES-256-CBC';
     private static $secret_key;
 
-    // Obtiene la clave de encriptación desde la variable de entorno
+    // Obtiene la clave de encriptación y asegura que tenga 32 bytes (SHA-256)
     private static function getKey()
     {
         if (!empty(self::$secret_key)) {
             return self::$secret_key;
         }
 
-        // Intentar obtener de variables de entorno
+        // 1. Intentar obtener de variables de entorno del servidor
         $secret = $_ENV['APP_SECRET_KEY'] ?? $_SERVER['APP_SECRET_KEY'] ?? getenv('APP_SECRET_KEY') ?: '';
 
-        // Si no está disponible, leer directamente del archivo .env
+        // 2. Si no está disponible, leer directamente del archivo .env (Fallback manual)
         if (empty($secret)) {
             $envFile = __DIR__ . '/../../.env';
             if (file_exists($envFile)) {
@@ -37,7 +37,8 @@ class Crypto
             throw new Exception('La variable APP_SECRET_KEY no está definida en el .env');
         }
 
-        // Cachear el hash para no tener que calcularlo múltiples veces
+        // Generamos un hash binario de 32 bytes exactos.
+        // Esto asegura compatibilidad con AES-256 sin importar el largo de tu contraseña.
         self::$secret_key = hash('sha256', $secret, true);
         return self::$secret_key;
     }
@@ -47,16 +48,26 @@ class Crypto
         if (empty($texto))
             return null;
 
-        // 1. Generar un IV (Vector de Inicialización) aleatorio y seguro
+        // 1. Definir tamaño del vector
         $ivSize = openssl_cipher_iv_length(self::$method);
-        $iv = openssl_random_pseudo_bytes($ivSize);
 
-        // 2. Encriptar el texto usando la llave y el IV
-        $encrypted = openssl_encrypt($texto, self::$method, self::getKey(), 0, $iv);
+        // 2. Generar un IV nuevo y aleatorio (Usamos random_bytes por ser más moderno/seguro)
+        // Le llamamos $ivGenerado para entender que NACE aquí.
+        $ivGenerado = random_bytes($ivSize);
 
-        // 3. Concatenamos el IV + El Texto Encriptado y lo convertimos a Base64
-        // Guardamos el IV para poder desencriptar después.
-        return base64_encode($iv . $encrypted);
+        // 3. Encriptar el texto
+        // Usamos OPENSSL_RAW_DATA para obtener binario puro (sin base64 intermedio)
+        $encryptedRaw = openssl_encrypt(
+            $texto, 
+            self::$method, 
+            self::getKey(), 
+            OPENSSL_RAW_DATA, 
+            $ivGenerado
+        );
+
+        // 4. Empaquetar: Concatenamos el IV (binario) + Mensaje (binario)
+        // Y convertimos todo a Base64 una sola vez para el transporte.
+        return base64_encode($ivGenerado . $encryptedRaw);
     }
 
     public static function desencriptar($textoCifrado)
@@ -64,25 +75,34 @@ class Crypto
         if (empty($textoCifrado))
             return null;
 
-        // 1. Decodificar de Base64 a binario
+        // 1. Decodificar de Base64 a binario (El paquete completo)
         $data = base64_decode($textoCifrado, true);
 
-        // Si falla la decodificación o el dato es muy corto, retornamos el texto original (asumimos que no estaba encriptado)
+        // Validación: ¿Es un dato válido y tiene al menos el tamaño del IV?
         $ivSize = openssl_cipher_iv_length(self::$method);
         if ($data === false || strlen($data) < $ivSize) {
-            return $textoCifrado;
+            return $textoCifrado; // Retornamos original si no parece estar encriptado
         }
 
-        // 3. Extraer el IV (la primera parte del string)
-        $iv = substr($data, 0, $ivSize);
+        // 2. Separar los ingredientes
+        
+        // Extraemos el IV del inicio del paquete
+        $ivExtraido = substr($data, 0, $ivSize);
 
-        // 4. Extraer el mensaje cifrado real (el resto del string)
-        $encryptedText = substr($data, $ivSize);
+        // Extraemos el mensaje cifrado (lo que queda después del IV)
+        $encryptedTextBinario = substr($data, $ivSize);
 
-        // 5. Desencriptar
-        $decrypted = openssl_decrypt($encryptedText, self::$method, self::getKey(), 0, $iv);
+        // 3. Desencriptar
+        // IMPORTANTE: Usamos OPENSSL_RAW_DATA porque $encryptedTextBinario es binario puro
+        $decrypted = openssl_decrypt(
+            $encryptedTextBinario, 
+            self::$method, 
+            self::getKey(), 
+            OPENSSL_RAW_DATA, 
+            $ivExtraido
+        );
 
-        // Si falla la desencriptación, devolvemos el original
+        // Si falla la desencriptación, devolvemos el texto cifrado original
         return $decrypted !== false ? $decrypted : $textoCifrado;
     }
 }
