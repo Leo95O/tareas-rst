@@ -3,30 +3,38 @@
 use App\Controllers\ProyectoController;
 
 $app = \Slim\Slim::getInstance();
+$container = $app->di;
 
-$app->group('/proyectos', function () use ($app) {
+$app->group('/proyectos', function () use ($app, $container) {
 
-    // Todos pueden entrar aquí
-    $app->get('/', function () {
-        (new ProyectoController())->listar();
+    // Listar todos los proyectos
+    $app->get('/', function () use ($container) {
+        $controller = $container->get(ProyectoController::class);
+        $controller->listar();
     });
 
-    $app->get('/:id', function ($id) {
-        (new ProyectoController())->obtenerPorId($id);
+    // Crear proyecto
+    $app->post('/', function () use ($container) {
+        $controller = $container->get(ProyectoController::class);
+        $controller->crear();
     });
 
-    // Estas rutas ejecutarán la lógica del Service y
-    // lanzarán error si el usuario es Rol 3.
-    $app->post('/', function () {
-        (new ProyectoController())->crear();
+    // Obtener un proyecto específico
+    $app->get('/:id', function ($id) use ($container) {
+        $controller = $container->get(ProyectoController::class);
+        $controller->obtenerPorId($id);
     });
 
-    $app->put('/:id', function ($id) {
-        (new ProyectoController())->editar($id);
+    // Editar proyecto
+    $app->put('/:id', function ($id) use ($container) {
+        $controller = $container->get(ProyectoController::class);
+        $controller->editar($id);
     });
 
-    $app->delete('/:id', function ($id) {
-        (new ProyectoController())->eliminar($id);
+    // Eliminar proyecto
+    $app->delete('/:id', function ($id) use ($container) {
+        $controller = $container->get(ProyectoController::class);
+        $controller->eliminar($id);
     });
 
 });

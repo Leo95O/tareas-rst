@@ -1,16 +1,15 @@
 <?php
 
 use App\Controllers\ReporteController;
-use App\Middleware\RolMiddleware;
 
 $app = \Slim\Slim::getInstance();
+$container = $app->di;
 
-// Protegido para Roles 1 y 2
-$app->group('/reportes', RolMiddleware::verificar([1, 2]), function () use ($app) {
+$app->group('/reportes', function () use ($app, $container) {
 
-    // GET /reportes/dashboard
-    $app->get('/dashboard', function () {
-        (new ReporteController())->dashboardGeneral();
+    $app->get('/dashboard', function () use ($container) {
+        $controller = $container->get(ReporteController::class);
+        $controller->dashboardGeneral();
     });
 
 });

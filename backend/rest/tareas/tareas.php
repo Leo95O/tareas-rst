@@ -3,37 +3,50 @@
 use App\Controllers\TareaController;
 
 $app = \Slim\Slim::getInstance();
-// Agrupamos bajo /tareas
-$app->group('/tareas', function () use ($app) {
+$container = $app->di;
 
-    // GET /tareas (Listar)
-    $app->get('/', function () {
-        (new TareaController())->listar();
+$app->group('/tareas', function () use ($app, $container) {
+
+    // 1. Rutas Específicas (Deben ir antes de /:id para evitar conflictos)
+    
+    // Bolsa de tareas (sin asignar)
+    $app->get('/bolsa', function () use ($container) {
+        $controller = $container->get(TareaController::class);
+        $controller->listarBolsa();
     });
 
-    // POST /tareas (Crear)
-    $app->post('/', function () {
-        (new TareaController())->crear();
+    // 2. Rutas Generales
+    
+    // Listar tareas (filtra por rol internamente)
+    $app->get('/', function () use ($container) {
+        $controller = $container->get(TareaController::class);
+        $controller->listar();
     });
 
-    // PUT /tareas/:id (Editar)
-    $app->put('/:id', function ($id) {
-        (new TareaController())->editar($id);
+    // Crear tarea
+    $app->post('/', function () use ($container) {
+        $controller = $container->get(TareaController::class);
+        $controller->crear();
     });
 
-    // DELETE /tareas/:id (Eliminar)
-    $app->delete('/:id', function ($id) {
-        (new TareaController())->eliminar($id);
+    // 3. Rutas con ID
+    
+    // Editar tarea
+    $app->put('/:id', function ($id) use ($container) {
+        $controller = $container->get(TareaController::class);
+        $controller->editar($id);
     });
 
-    // GET /tareas/bolsa - Lista tareas disponibles (sin asignar)
-    $app->get('/bolsa', function () {
-        (new TareaController())->listarBolsa();
+    // Eliminar tarea
+    $app->delete('/:id', function ($id) use ($container) {
+        $controller = $container->get(TareaController::class);
+        $controller->eliminar($id);
     });
 
-    // PUT /tareas/:id/asignarme - Auto-asignarse una tarea
-    $app->put('/:id/asignarme', function ($id) {
-        (new TareaController())->asignarme($id);
+    // Auto-asignarse una tarea
+    $app->put('/:id/asignarme', function ($id) use ($container) {
+        $controller = $container->get(TareaController::class);
+        $controller->asignarme($id);
     });
 
 });
