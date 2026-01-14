@@ -1,17 +1,16 @@
 <?php
 
 namespace App\Controllers;
-
-use App\Repositories\DataMasterRepository;
+use App\Interfaces\DataMaster\DataMasterRepositoryInterface;
 use App\Utils\ApiResponse;
 
 class DataMasterController
 {
     private $repository;
 
-    public function __construct()
+    public function __construct(DataMasterRepositoryInterface $repo)
     {
-        $this->repository = new DataMasterRepository();
+        $this->repository = $repo;
     }
 
     public function getCategorias()

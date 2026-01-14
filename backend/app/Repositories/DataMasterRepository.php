@@ -2,16 +2,16 @@
 
 namespace App\Repositories;
 
-use App\Config\Database;
+use App\Interfaces\DataMaster\DataMasterRepositoryInterface;
 use PDO;
 
-class DataMasterRepository
+class DataMasterRepository implements DataMasterRepositoryInterface
 {
     private $conn;
 
-    public function __construct()
+    public function __construct(PDO $connection)
     {
-        $this->conn = Database::getInstance()->getConnection();
+        $this->conn = $connection;
     }
 
     public function listarCategorias()

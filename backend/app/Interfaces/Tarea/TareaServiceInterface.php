@@ -1,12 +1,13 @@
 <?php
-namespace App\Interfaces;
+
+namespace App\Interfaces\Tarea;
 
 interface TareaServiceInterface
 {
-    public function listarTareas($usuarioLogueado);
+    public function listarTareas($usuario);
+    public function crearTarea($datos, $usuarioActual);
+    public function editarTarea($id, $datos, $usuarioActual);
+    public function eliminarTarea($id, $usuarioActual);
     public function listarBolsa();
-    public function crearTarea($datos, $usuarioLogueado);
-    public function editarTarea($id, $datos, $usuarioLogueado);
-    public function eliminarTarea($id, $usuarioLogueado);
-    public function asignarTarea($tareaId, $usuarioId);
+    public function asignarTarea($tareaId, $usuario);
 }

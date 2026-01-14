@@ -2,23 +2,22 @@
 
 namespace App\Repositories;
 
-use App\Config\Database;
+use App\Interfaces\Reporte\ReporteRepositoryInterface;
 use PDO;
 
-class ReporteRepository
+class ReporteRepository implements ReporteRepositoryInterface
 {
     private $conn;
 
-    public function __construct()
+    // 1. Inyección de Dependencias: Recibimos la conexión
+    public function __construct(PDO $connection)
     {
-        // Obtiene la conexión a la base de datos
-        $this->conn = Database::getInstance()->getConnection();
+        $this->conn = $connection;
     }
 
     // Obtiene los contadores globales del sistema
     public function obtenerTotales()
     {
-        // Ejecuta múltiples conteos en una sola consulta
         $sql = "SELECT 
                     (SELECT COUNT(*) FROM usuarios WHERE usuario_estado = 1) as total_usuarios,
                     (SELECT COUNT(*) FROM proyectos WHERE fecha_eliminacion IS NULL) as total_proyectos,
@@ -45,7 +44,6 @@ class ReporteRepository
     // Obtiene las tareas vencidas no completadas
     public function tareasVencidas()
     {
-        // Excluye tareas completadas y canceladas
         $sql = "SELECT t.tarea_titulo, t.fecha_limite, u.usuario_nombre, p.proyecto_nombre
                 FROM tareas t
                 LEFT JOIN usuarios u ON t.usuario_asignado = u.usuario_id

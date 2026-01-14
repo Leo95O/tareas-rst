@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-use App\Services\TareaService;
+use App\Interfaces\Tarea\TareaServiceInterface;
 use App\Utils\ApiResponse;
 use App\Validators\TareaValidator;
 use \Slim\Slim;
@@ -11,9 +11,9 @@ class TareaController
 {
     private $tareaService;
 
-    public function __construct()
+    public function __construct(TareaServiceInterface $service)
     {
-        $this->tareaService = new TareaService();
+        $this->tareaService = $service;
     }
 
     // GET /tareas
@@ -21,15 +21,10 @@ class TareaController
     {
         try {
             $app = Slim::getInstance();
-
-            // Obtenemos el usuario que el Middleware validó previamente.
             $usuarioLogueado = $app->usuario;
 
-            // Llamamos al servicio pasando al usuario entero
-            // El servicio decidirá qué tareas mostrarle según su rol.
             $tareas = $this->tareaService->listarTareas($usuarioLogueado);
 
-            // Convertimos los objetos a Array para la respuesta JSON
             $data = array_map(function ($t) {
                 return $t->toArray();
             }, $tareas);
@@ -47,11 +42,10 @@ class TareaController
         try {
             $app = Slim::getInstance();
             $datos = json_decode($app->request->getBody(), true);
-            $usuarioLogueado = $app->usuario; // Objeto Usuario completo
+            $usuarioLogueado = $app->usuario;
 
             TareaValidator::validarCreacion($datos);
 
-            // CAMBIO: Pasamos $usuarioLogueado (Objeto) en vez de solo el ID
             $nuevoId = $this->tareaService->crearTarea($datos, $usuarioLogueado);
 
             ApiResponse::exito("Tarea creada exitosamente.", ['id' => $nuevoId]);
@@ -67,8 +61,6 @@ class TareaController
         try {
             $app = Slim::getInstance();
             $datos = json_decode($app->request->getBody(), true);
-
-            // Necesitamos saber quién está editando para validar permisos
             $usuarioLogueado = $app->usuario;
 
             TareaValidator::validarEdicion($datos);
@@ -82,16 +74,13 @@ class TareaController
         }
     }
 
-    // SOFT DELETE
+    // DELETE /tareas/:id
     public function eliminar($id)
     {
         try {
             $app = Slim::getInstance();
-
-            // Obtenemos quién quiere borrar
             $usuarioLogueado = $app->usuario;
 
-            // Llamamos al servicio PASANDO EL USUARIO
             $this->tareaService->eliminarTarea($id, $usuarioLogueado);
 
             ApiResponse::exito("Tarea eliminada correctamente.");
@@ -101,11 +90,11 @@ class TareaController
         }
     }
 
-    // GET /tareas/bolsa - Lista tareas sin asignar (Bolsa de Tareas)
+    // GET /tareas/bolsa
     public function listarBolsa()
     {
         try {
-            $tareas = $this->tareaService->listarTareasBolsa();
+            $tareas = $this->tareaService->listarBolsa();
 
             $data = array_map(function ($t) {
                 return $t->toArray();
@@ -118,14 +107,14 @@ class TareaController
         }
     }
 
-    // PUT /tareas/:id/asignarme - Usuario se auto-asigna una tarea
+    // PUT /tareas/:id/asignarme
     public function asignarme($id)
     {
         try {
             $app = Slim::getInstance();
             $usuarioLogueado = $app->usuario;
 
-            $this->tareaService->autoAsignarTarea($id, $usuarioLogueado);
+            $this->tareaService->asignarTarea($id, $usuarioLogueado);
 
             ApiResponse::exito("¡Tarea asignada correctamente! Ahora puedes verla en 'Mis Tareas'.");
 

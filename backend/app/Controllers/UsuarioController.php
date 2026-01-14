@@ -2,7 +2,8 @@
 
 namespace App\Controllers;
 
-use App\Services\UsuarioService;
+// 1. CAMBIO: Usamos la Interfaz del servicio
+use App\Interfaces\Usuario\UsuarioServiceInterface;
 use App\Utils\ApiResponse;
 use App\Utils\Auth;
 use App\Validators\UsuarioValidator;
@@ -12,9 +13,10 @@ class UsuarioController
 {
     private $usuarioService;
 
-    public function __construct()
+    // 2. CAMBIO: Inyección de Dependencias en el constructor
+    public function __construct(UsuarioServiceInterface $service)
     {
-        $this->usuarioService = new UsuarioService();
+        $this->usuarioService = $service;
     }
 
     // MÉTODOS PÚBLICOS (Registro y Login)
@@ -71,7 +73,6 @@ class UsuarioController
     }
 
     // MÉTODOS DE ADMINISTRADOR (Gestión)
-    // Metodo getUsers() del frontend
     public function listarTodo()
     {
         try {
@@ -95,7 +96,6 @@ class UsuarioController
         }
     }
 
-    // Metodo createUser() del frontend
     public function crearAdmin()
     {
         try {
@@ -114,7 +114,6 @@ class UsuarioController
         }
     }
 
-    // Metodo updateUser() del frontend
     public function editarAdmin($id)
     {
         try {
@@ -133,7 +132,6 @@ class UsuarioController
         }
     }
 
-    // Metodo deleteUser() del frontend
     public function eliminarAdmin($id)
     {
         try {

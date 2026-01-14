@@ -2,19 +2,20 @@
 
 use DI\ContainerBuilder;
 use App\Config\Database;
+use PDO;
 
-// 1. Importar Interfaces
-use App\Interfaces\DataMasterRepositoryInterface;
-use App\Interfaces\LoginGuardRepositoryInterface;
-use App\Interfaces\ProyectoRepositoryInterface;
-use App\Interfaces\ReporteRepositoryInterface;
-use App\Interfaces\TareaRepositoryInterface;
-use App\Interfaces\UsuarioRepositoryInterface;
+// 1. Importar Interfaces (AJUSTADO A LAS CARPETAS CORRECTAS)
+use App\Interfaces\DataMaster\DataMasterRepositoryInterface;
+use App\Interfaces\LoginGuard\LoginGuardRepositoryInterface;
+use App\Interfaces\Proyecto\ProyectoRepositoryInterface;
+use App\Interfaces\Reporte\ReporteRepositoryInterface;
+use App\Interfaces\Tarea\TareaRepositoryInterface;
+use App\Interfaces\Usuario\UsuarioRepositoryInterface;
 
-use App\Interfaces\LoginGuardServiceInterface;
-use App\Interfaces\ProyectoServiceInterface;
-use App\Interfaces\TareaServiceInterface;
-use App\Interfaces\UsuarioServiceInterface;
+use App\Interfaces\LoginGuard\LoginGuardServiceInterface;
+use App\Interfaces\Proyecto\ProyectoServiceInterface;
+use App\Interfaces\Tarea\TareaServiceInterface;
+use App\Interfaces\Usuario\UsuarioServiceInterface;
 
 // 2. Importar Clases Concretas
 use App\Repositories\DataMasterRepository;
@@ -46,7 +47,7 @@ $builder->addDefinitions([
     },
 
     // --- B. Repositorios (Data Layer) ---
-    // Conectamos la Interfaz con la Implementación real y le inyectamos PDO
+    // Inyección manual del PDO en cada repositorio
     DataMasterRepositoryInterface::class => \DI\create(DataMasterRepository::class)->constructor(\DI\get(PDO::class)),
     LoginGuardRepositoryInterface::class => \DI\create(LoginGuardRepository::class)->constructor(\DI\get(PDO::class)),
     ProyectoRepositoryInterface::class   => \DI\create(ProyectoRepository::class)->constructor(\DI\get(PDO::class)),
@@ -55,14 +56,28 @@ $builder->addDefinitions([
     UsuarioRepositoryInterface::class    => \DI\create(UsuarioRepository::class)->constructor(\DI\get(PDO::class)),
 
     // --- C. Servicios (Business Layer) ---
-    // Inyectamos el Repositorio correspondiente (usando su Interfaz)
-    LoginGuardServiceInterface::class => \DI\create(LoginGuardService::class)->constructor(\DI\get(LoginGuardRepositoryInterface::class)),
-    ProyectoServiceInterface::class   => \DI\create(ProyectoService::class)->constructor(\DI\get(ProyectoRepositoryInterface::class)),
-    TareaServiceInterface::class      => \DI\create(TareaService::class)->constructor(\DI\get(TareaRepositoryInterface::class)),
-    UsuarioServiceInterface::class    => \DI\create(UsuarioService::class)->constructor(\DI\get(UsuarioRepositoryInterface::class)),
+    
+    // LoginGuardService: Recibe su Repo
+    LoginGuardServiceInterface::class => \DI\create(LoginGuardService::class)
+        ->constructor(\DI\get(LoginGuardRepositoryInterface::class)),
+
+    // ProyectoService: Recibe su Repo
+    ProyectoServiceInterface::class => \DI\create(ProyectoService::class)
+        ->constructor(\DI\get(ProyectoRepositoryInterface::class)),
+
+    // TareaService: Recibe su Repo
+    TareaServiceInterface::class => \DI\create(TareaService::class)
+        ->constructor(\DI\get(TareaRepositoryInterface::class)),
+
+    // ★ CORRECCIÓN IMPORTANTE AQUÍ:
+    // UsuarioService: Recibe UsuarioRepo Y TAMBIÉN LoginGuardService
+    UsuarioServiceInterface::class => \DI\create(UsuarioService::class)
+        ->constructor(
+            \DI\get(UsuarioRepositoryInterface::class),
+            \DI\get(LoginGuardServiceInterface::class) // ¡Faltaba esto!
+        ),
 
     // --- D. Controladores (Presentation Layer) ---
-    // Inyectamos el Servicio o Repositorio según corresponda
     
     // Tareas: Usa Servicio
     TareaController::class => \DI\create(TareaController::class)

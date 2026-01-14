@@ -2,7 +2,8 @@
 
 namespace App\Controllers;
 
-use App\Services\ProyectoService;
+// 1. Usamos la Interfaz (Ajusta el namespace si tu interfaz está en otra carpeta)
+use App\Interfaces\Proyecto\ProyectoServiceInterface; 
 use App\Utils\ApiResponse;
 use App\Validators\ProyectoValidator;
 use \Slim\Slim;
@@ -11,21 +12,21 @@ class ProyectoController
 {
     private $proyectoService;
 
-    public function __construct()
+    // 2. Inyección de Dependencias: Pedimos el Servicio
+    public function __construct(ProyectoServiceInterface $service)
     {
-        $this->proyectoService = new ProyectoService();
+        $this->proyectoService = $service;
     }
 
     public function listar()
     {
         try {
             $app = Slim::getInstance();
-            $usuario = $app->usuario; // Usuario autenticado (inyectado por middleware)
+            $usuario = $app->usuario; 
 
-            // El servicio filtra según el rol del usuario
+            // El servicio inyectado ya sabe qué hacer
             $proyectos = $this->proyectoService->listarProyectos($usuario);
 
-            // Convertir a array
             $data = array_map(function ($p) {
                 return $p->toArray();
             }, $proyectos);
@@ -53,7 +54,7 @@ class ProyectoController
         try {
             $app = Slim::getInstance();
             $datos = json_decode($app->request->getBody(), true);
-            $usuario = $app->usuario; // Inyectado por Middleware
+            $usuario = $app->usuario;
 
             ProyectoValidator::validarCreacion($datos);
 
@@ -61,7 +62,6 @@ class ProyectoController
             ApiResponse::exito("Proyecto creado.", ['id' => $id]);
 
         } catch (\Exception $e) {
-            // Muestra que no tiene permisos si es rol 3
             ApiResponse::alerta($e->getMessage());
         }
     }

@@ -1,10 +1,12 @@
 <?php
-namespace App\Interfaces;
+
+namespace App\Interfaces\Proyecto;
 
 interface ProyectoServiceInterface
 {
-    public function listarProyectos($usuarioId, $rolId);
-    public function crearProyecto($datos, $usuarioId);
-    public function editarProyecto($id, $datos, $usuarioId, $rolId);
-    public function eliminarProyecto($id, $usuarioId, $rolId);
+    public function listarProyectos($usuario);
+    public function obtenerProyectoPorId($id);
+    public function crearProyecto($datos, $usuario);
+    public function editarProyecto($id, $datos, $usuario);
+    public function eliminarProyecto($id, $usuario);
 }

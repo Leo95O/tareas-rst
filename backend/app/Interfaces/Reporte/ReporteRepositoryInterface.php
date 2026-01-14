@@ -1,8 +1,11 @@
 <?php
-namespace App\Interfaces;
+
+namespace App\Interfaces\Reporte;
 
 interface ReporteRepositoryInterface
 {
-    public function obtenerTotales($usuarioId, $rolId);
-    public function avanceProyectos($usuarioId, $rolId);
+    public function obtenerTotales();
+    public function tareasPorEstado();
+    public function tareasVencidas();
+    public function avanceProyectos();
 }

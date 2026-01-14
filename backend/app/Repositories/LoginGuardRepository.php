@@ -2,16 +2,19 @@
 
 namespace App\Repositories;
 
-use App\Config\Database;
+// 1. Usar la Interfaz (ajusta el namespace si es diferente en tu estructura)
+use App\Interfaces\LoginGuard\LoginGuardRepositoryInterface;
 use PDO;
 
-class LoginGuardRepository
+// 2. Implementar la Interfaz
+class LoginGuardRepository implements LoginGuardRepositoryInterface
 {
     private $conn;
 
-    public function __construct()
+    // 3. Inyección de Dependencias: Recibimos PDO
+    public function __construct(PDO $connection)
     {
-        $this->conn = Database::getInstance()->getConnection();
+        $this->conn = $connection;
     }
 
     public function obtenerEstado($correo)

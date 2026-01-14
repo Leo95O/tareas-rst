@@ -2,32 +2,32 @@
 
 namespace App\Services;
 
-use App\Repositories\LoginGuardRepository;
+use App\Interfaces\LoginGuard\LoginGuardServiceInterface;
+use App\Interfaces\LoginGuard\LoginGuardRepositoryInterface;
 use Exception;
 use DateTime;
 
-class LoginGuardService
+class LoginGuardService implements LoginGuardServiceInterface
 {
     private $repository;
 
-    public function __construct()
+    public function __construct(LoginGuardRepositoryInterface $repo)
     {
-        // Inicializa el repositorio de control de logins
-        $this->repository = new LoginGuardRepository();
+        $this->repository = $repo;
     }
 
-    // Verifica si el usuario puede intentar iniciar sesión
+    // Verifica si el usuario tiene permitido intentar iniciar sesión
     public function verificarSiPuedeEntrar($correo)
     {
         $estado = $this->repository->obtenerEstado($correo);
 
         if ($estado) {
-            // Valida bloqueo permanente
+            // Comprueba si existe un bloqueo permanente
             if ($estado['nivel_bloqueo'] >= 3) {
                 throw new Exception("Tu cuenta ha sido bloqueada permanentemente. Contacta al soporte.");
             }
 
-            // Valida bloqueo temporal
+            // Comprueba si existe un bloqueo temporal activo
             if (!empty($estado['bloqueado_hasta'])) {
                 $ahora = new DateTime();
                 $hasta = new DateTime($estado['bloqueado_hasta']);
@@ -39,11 +39,10 @@ class LoginGuardService
             }
         }
 
-        // Retorna el estado si no hay bloqueo
         return $estado;
     }
 
-    // Procesa un intento de login fallido
+    // Gestiona la lógica de acumulación de intentos fallidos y escalado de bloqueos
     public function procesarIntentoFallido($correo, $estadoActual)
     {
         $ahora = new DateTime();
@@ -57,7 +56,7 @@ class LoginGuardService
             $ultimoIntento = $estadoActual['ultimo_intento'] ? new DateTime($estadoActual['ultimo_intento']) : null;
         }
 
-        // Resetea intentos si pasaron más de 2 minutos
+        // Si pasaron más de 2 minutos desde el último error, se reinicia el contador de intentos
         if ($ultimoIntento) {
             $diffMinutos = ($ahora->getTimestamp() - $ultimoIntento->getTimestamp()) / 60;
             if ($diffMinutos > 2) {
@@ -68,7 +67,7 @@ class LoginGuardService
         $intentos++;
         $bloqueadoHasta = null;
 
-        // Incrementa nivel de bloqueo cada 3 intentos
+        // Cada 3 intentos consecutivos aumenta la severidad del bloqueo
         if ($intentos >= 3) {
             $nivel++;
             $intentos = 0;
@@ -80,14 +79,14 @@ class LoginGuardService
                 $ahora->modify('+10 minutes');
                 $bloqueadoHasta = $ahora->format('Y-m-d H:i:s');
             } elseif ($nivel >= 3) {
-                $bloqueadoHasta = null;
+                $bloqueadoHasta = null; // null indica bloqueo permanente en la lógica de negocio
             }
         }
 
         $this->repository->registrarFallo($correo, $intentos, $nivel, $bloqueadoHasta);
     }
 
-    // Limpia el historial de fallos del usuario
+    // Elimina el historial de bloqueos tras un inicio de sesión exitoso
     public function limpiarHistorial($correo)
     {
         $this->repository->limpiar($correo);

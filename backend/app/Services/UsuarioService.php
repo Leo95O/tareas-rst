@@ -2,21 +2,24 @@
 
 namespace App\Services;
 
-use App\Repositories\UsuarioRepository;
+use App\Interfaces\Usuario\UsuarioServiceInterface;
+use App\Interfaces\Usuario\UsuarioRepositoryInterface;
+use App\Interfaces\LoginGuard\LoginGuardServiceInterface;
 use App\Entities\Usuario;
 use App\Utils\Crypto;
 use Exception;
-use App\Services\LoginGuardService;
 
-class UsuarioService
+class UsuarioService implements UsuarioServiceInterface
 {
     private $usuarioRepository;
     private $loginGuard;
 
-    public function __construct()
-    {
-        $this->usuarioRepository = new UsuarioRepository();
-        $this->loginGuard = new LoginGuardService();
+    public function __construct(
+        UsuarioRepositoryInterface $usuarioRepository,
+        LoginGuardServiceInterface $loginGuard
+    ) {
+        $this->usuarioRepository = $usuarioRepository;
+        $this->loginGuard = $loginGuard;
     }
 
     // Registro de usuario público    
@@ -45,7 +48,7 @@ class UsuarioService
 
     public function loginUsuario($correo, $password)
     {
-        // Verifica si el usuario puede intentar iniciar sesión
+        // Verifica si el usuario puede intentar iniciar sesión (Servicio LoginGuard)
         $estadoSeguridad = $this->loginGuard->verificarSiPuedeEntrar($correo);
 
         // Obtiene el usuario y valida credenciales

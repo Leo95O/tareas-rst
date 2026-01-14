@@ -1,17 +1,30 @@
 <?php
+
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../vendor/autoload.php'; 
+
+$dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+
+$dotenv->load();
+
+$container = require __DIR__ . '/../config/container.php';
 
 $app = new \Slim\Slim();
 
-//Modo Local 
+// Configuración de entorno
 $app->config('debug', true);
-//Modo Producción
-//$app->config('debug', false);
+// $app->config('debug', false); // Producción
 
-$app->add(new \App\Middleware\AuthMiddleware());
+
+$usuarioRepo = $container->get(\App\Interfaces\UsuarioRepositoryInterface::class);
+
+
+$app->add(new \App\Middleware\AuthMiddleware($usuarioRepo));
+
+
 $app->add(new \App\Middleware\CorsMiddleware());
 
-// Carga de rutas
+
 require_once __DIR__ . '/../rest/datamaster/datamaster.php';
 require_once __DIR__ . '/../rest/proyectos/proyectos.php';
 require_once __DIR__ . '/../rest/reportes/reportes.php';

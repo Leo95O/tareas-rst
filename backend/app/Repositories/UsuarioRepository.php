@@ -2,19 +2,18 @@
 
 namespace App\Repositories;
 
-use App\Config\Database;
+use App\Interfaces\Usuario\UsuarioRepositoryInterface; // 1. Importar Interfaz
 use App\Entities\Usuario;
 use PDO;
 use Exception;
 
-class UsuarioRepository
+class UsuarioRepository implements UsuarioRepositoryInterface
 {
     private $conn;
 
-    public function __construct()
+    public function __construct(PDO $connection)
     {
-        // Obtiene la conexión a la base de datos
-        $this->conn = Database::getInstance()->getConnection();
+        $this->conn = $connection;
     }
 
     // Obtiene un usuario por correo
@@ -134,7 +133,7 @@ class UsuarioRepository
         return $usuarios;
     }
 
-    // Obtiene un usuario sin validar estado
+    // Obtiene un usuario sin validar estado (para edición de admin)
     public function obtenerParaEditar($id)
     {
         $sql = "SELECT * FROM usuarios WHERE usuario_id = :id LIMIT 1";

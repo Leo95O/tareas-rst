@@ -2,7 +2,8 @@
 
 namespace App\Controllers;
 
-use App\Repositories\ReporteRepository;
+// 1. Usamos la Interfaz (Asegúrate de que la ruta del namespace sea correcta)
+use App\Interfaces\Reporte\ReporteRepositoryInterface;
 use App\Utils\ApiResponse;
 use App\Utils\Crypto;
 
@@ -10,24 +11,27 @@ class ReporteController
 {
     private $reporteRepository;
 
-    public function __construct()
+    // 2. Inyección de Dependencias: Pedimos el Repositorio mediante su contrato
+    public function __construct(ReporteRepositoryInterface $repo)
     {
-        $this->reporteRepository = new ReporteRepository();
+        $this->reporteRepository = $repo;
     }
 
     public function dashboardGeneral()
     {
         try {
-            // Obtenemos todas las estadísticas
+            // El repositorio ya está instanciado e inyectado
             $totales = $this->reporteRepository->obtenerTotales();
             $porEstado = $this->reporteRepository->tareasPorEstado();
             $avance = $this->reporteRepository->avanceProyectos();
             $vencidas = $this->reporteRepository->tareasVencidas();
 
             // Desencriptar nombres en la lista de vencidas
-            foreach ($vencidas as &$v) {
-                if (!empty($v['usuario_nombre'])) {
-                    $v['usuario_nombre'] = Crypto::desencriptar($v['usuario_nombre']);
+            if ($vencidas) {
+                foreach ($vencidas as &$v) {
+                    if (!empty($v['usuario_nombre'])) {
+                        $v['usuario_nombre'] = Crypto::desencriptar($v['usuario_nombre']);
+                    }
                 }
             }
 

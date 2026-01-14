@@ -2,17 +2,17 @@
 
 namespace App\Repositories;
 
-use App\Config\Database;
 use App\Entities\Tarea;
+use App\Interfaces\Tarea\TareaRepositoryInterface;
 use PDO;
 
-class TareaRepository
+class TareaRepository implements TareaRepositoryInterface
 {
     private $conn;
 
-    public function __construct()
+    public function __construct(PDO $connection )
     {
-        $this->conn = Database::getInstance()->getConnection();
+        $this->conn = $connection;
     }
 
     public function listar($usuarioId, $rolId)

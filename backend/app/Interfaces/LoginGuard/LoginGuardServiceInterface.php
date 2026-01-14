@@ -1,9 +1,10 @@
 <?php
-namespace App\Interfaces;
+
+namespace App\Interfaces\LoginGuard;
 
 interface LoginGuardServiceInterface
 {
-    public function verificarAcceso($usuario);
-    public function registrarIntentoFallido($usuario);
-    public function limpiarIntentos($usuario);
+    public function verificarSiPuedeEntrar($correo);
+    public function procesarIntentoFallido($correo, $estadoActual);
+    public function limpiarHistorial($correo);
 }

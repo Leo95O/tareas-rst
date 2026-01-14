@@ -1,9 +1,13 @@
 <?php
-namespace App\Interfaces;
+
+namespace App\Interfaces\LoginGuard;
 
 interface LoginGuardRepositoryInterface
 {
-    public function obtenerEstado($usuario);
-    public function registrarFallo($usuario);
-    public function limpiar($usuario);
+    public function obtenerEstado($correo);
+    
+    // Debe coincidir con los parámetros del repositorio
+    public function registrarFallo($correo, $intentos, $nivel, $bloqueadoHasta = null);
+    
+    public function limpiar($correo);
 }

@@ -5,24 +5,30 @@ namespace App\Middleware;
 use \Slim\Middleware;
 use App\Utils\ApiResponse;
 use App\Utils\Auth;
-use App\Repositories\UsuarioRepository;
+// Borramos "use App\Repositories\UsuarioRepository;" porque ya no la instanciamos directamente
+use App\Interfaces\UsuarioRepositoryInterface;
 
 // Capa de protección previa al controlador
 class AuthMiddleware extends Middleware
 {
+    private $usuarioRepo;
+
+    // 1. INYECCIÓN DE DEPENDENCIA (CORRECTO)
+    public function __construct(UsuarioRepositoryInterface $repo)
+    {
+        $this->usuarioRepo = $repo;
+    }
+
     public function call()
     {
-        // Defino rutas públicas que no requieren autenticación
         $rutasPublicas = [
             '/usuarios/login',
             '/usuarios/registro',
             '/'
         ];
 
-        // Obtener la ruta actual
         $rutaActual = $this->app->request->getPathInfo();
 
-        // Si la ruta actual está en la lista blanca, dejamos pasar SIN verificar
         if (in_array($rutaActual, $rutasPublicas)) {
             $this->next->call();
             return;
@@ -48,15 +54,18 @@ class AuthMiddleware extends Middleware
             $decoded = Auth::verificarToken($token);
             $usuarioId = $decoded->data->id;
 
-            $repo = new UsuarioRepository();
-            $usuario = $repo->obtenerPorId($usuarioId);
+            // --- AQUÍ ESTABA EL ERROR ---
+            // Antes tenías: $repo = new UsuarioRepository(); (ESTO FALLARÍA)
+            
+            // AHORA: Usamos la propiedad que inyectamos en el constructor
+            $usuario = $this->usuarioRepo->obtenerPorId($usuarioId);
 
             if (!$usuario || $usuario->usuario_token !== $token) {
                 ApiResponse::error("Sesión inválida o expirada.", [], 401);
                 return;
             }
 
-            // Inyectamos el usuario
+            // Inyectamos el usuario en la app para que otros controladores lo usen
             $app->usuario = $usuario;
 
             $this->next->call();

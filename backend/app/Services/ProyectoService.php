@@ -2,19 +2,20 @@
 
 namespace App\Services;
 
-use App\Repositories\ProyectoRepository;
+use App\Interfaces\Proyecto\ProyectoServiceInterface;
+use App\Interfaces\Proyecto\ProyectoRepositoryInterface;
 use App\Entities\Proyecto;
 use App\Utils\Crypto;
 use App\Validators\ProyectoValidator;
 use Exception;
 
-class ProyectoService
+class ProyectoService implements ProyectoServiceInterface
 {
     private $proyectoRepository;
 
-    public function __construct()
+    public function __construct(ProyectoRepositoryInterface $repo)
     {
-        $this->proyectoRepository = new ProyectoRepository();
+        $this->proyectoRepository = $repo;
     }
 
     // Se lista según el rol del usuario
@@ -26,7 +27,10 @@ class ProyectoService
                 $usuarioActual->usuario_id
             );
         } else {
-            $proyectos = $this->proyectoRepository->listar();
+            // Admin y PM ven todo. Pasamos IDs por si el repo requiere filtrado futuro
+            $uid = $usuarioActual ? $usuarioActual->usuario_id : null;
+            $rid = $usuarioActual ? $usuarioActual->rol_id : null;
+            $proyectos = $this->proyectoRepository->listar($uid, $rid);
         }
 
         foreach ($proyectos as $p) {
@@ -61,7 +65,6 @@ class ProyectoService
         // Se instancia el proyecto y se asignan los datos
         $proyecto = new Proyecto();
 
-        // Después de que el validador asegura que los datos existen
         $proyecto->proyecto_nombre = $datos["nombre"];
         $proyecto->sucursal_id     = $datos["sucursal_id"];
         $proyecto->usuario_creador = $usuarioActual->usuario_id;
@@ -69,7 +72,7 @@ class ProyectoService
         $proyecto->proyecto_descripcion = $datos["descripcion"]  ?? "";
         $proyecto->estado_id            = $datos["estado_id"]    ?? 1;
 
-        // Lógica de fechas corregida: Validar incluso valores por defecto
+        // Lógica de fechas
         $inicio = $datos["fecha_inicio"] ?? date("Y-m-d");
         $fin    = $datos["fecha_fin"]    ?? null;
 
@@ -101,7 +104,7 @@ class ProyectoService
         $proyecto->sucursal_id          = $datos["sucursal_id"] ?? $proyecto->sucursal_id;
         $proyecto->estado_id            = $datos["estado_id"]   ?? $proyecto->estado_id;
 
-        // Lógica de fechas corregida para edición
+        // Lógica de fechas para edición
         $nuevaInicio = $datos["fecha_inicio"] ?? $proyecto->fecha_inicio;
         $nuevaFin    = $datos["fecha_fin"]    ?? $proyecto->fecha_fin;
 
@@ -122,6 +125,6 @@ class ProyectoService
             throw new Exception("No tienes permisos para eliminar proyectos.");
         }
 
-        return $this->proyectoRepository->eliminar($id);
+        return $this->proyectoRepository->eliminar($id, $usuarioActual->usuario_id);
     }
 }

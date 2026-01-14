@@ -2,23 +2,25 @@
 
 namespace App\Repositories;
 
-use App\Config\Database;
+use App\Interfaces\Proyecto\ProyectoRepositoryInterface; // 1. Usar Interfaz
 use App\Entities\Proyecto;
 use PDO;
 
-class ProyectoRepository
+class ProyectoRepository implements ProyectoRepositoryInterface // 2. Implementar
 {
     private $conn;
 
-    public function __construct()
+    // 3. Inyección de Dependencias
+    public function __construct(PDO $connection)
     {
-        $this->conn = Database::getInstance()->getConnection();
+        $this->conn = $connection;
     }
 
     /**
-     * Listar todos los proyectos activos (no eliminados)
+     * Listar proyectos (Cumple con la firma de la interfaz)
+     * Por defecto trae todos (lógica de admin), pero recibe params por si quieres filtrar a futuro.
      */
-    public function listar()
+    public function listar($usuarioId, $rolId)
     {
         $sql = "SELECT p.*, 
                        u.usuario_nombre as nombre_creador,
@@ -77,9 +79,6 @@ class ProyectoRepository
         return $proyectos;
     }
 
-    /**
-     * Obtener un proyecto por ID
-     */
     public function obtenerPorId($id)
     {
         $sql = "SELECT p.*, 
@@ -100,9 +99,6 @@ class ProyectoRepository
         return $data ? new Proyecto($data) : null;
     }
 
-    /**
-     * Crear un nuevo proyecto
-     */
     public function crear(Proyecto $proyecto)
     {
         $sql = "INSERT INTO proyectos 
@@ -126,9 +122,6 @@ class ProyectoRepository
         return false;
     }
 
-    /**
-     * Actualizar un proyecto existente
-     */
     public function actualizar(Proyecto $proyecto)
     {
         $sql = "UPDATE proyectos SET 
@@ -153,13 +146,37 @@ class ProyectoRepository
     }
 
     /**
-     * Soft Delete: Llenar fecha_eliminacion
+     * Soft Delete
+     * Actualizamos la firma para aceptar $usuarioId (aunque no lo usemos en la query)
+     * para cumplir con la interfaz.
      */
-    public function eliminar($id)
+    public function eliminar($id, $usuarioId = null)
     {
         $sql = "UPDATE proyectos SET fecha_eliminacion = NOW() WHERE proyecto_id = :id";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
+    }
+
+    /**
+     * NUEVO MÉTODO: Requerido por la Interfaz para validaciones
+     */
+    public function existeNombre($nombre, $excluirId = null)
+    {
+        $sql = "SELECT COUNT(*) FROM proyectos WHERE proyecto_nombre = :nombre AND fecha_eliminacion IS NULL";
+        
+        if ($excluirId) {
+            $sql .= " AND proyecto_id != :id";
+        }
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':nombre', $nombre);
+        
+        if ($excluirId) {
+            $stmt->bindParam(':id', $excluirId);
+        }
+
+        $stmt->execute();
+        return $stmt->fetchColumn() > 0;
     }
 }

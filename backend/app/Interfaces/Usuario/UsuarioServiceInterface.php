@@ -1,11 +1,15 @@
 <?php
-namespace App\Interfaces;
+
+namespace App\Interfaces\Usuario;
 
 interface UsuarioServiceInterface
 {
-    public function listarUsuarios();
-    public function crearUsuario($datos);
-    public function editarUsuario($id, $datos);
-    public function eliminarUsuario($id);
-    public function obtenerPorId($id);
+
+    public function registrarUsuario($datos);
+    public function loginUsuario($correo, $password);
+    public function guardarTokenSesion($id, $token);
+    public function listarUsuariosAdmin($usuarioLogueado, $filtroRol);
+    public function crearUsuarioAdmin($datos, $usuarioLogueado);
+    public function editarUsuarioAdmin($id, $datos, $usuarioLogueado);
+    public function eliminarUsuarioAdmin($id, $usuarioLogueado);
 }
