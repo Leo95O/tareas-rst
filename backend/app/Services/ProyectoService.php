@@ -66,11 +66,19 @@ class ProyectoService
         $proyecto->sucursal_id     = $datos["sucursal_id"];
         $proyecto->usuario_creador = $usuarioActual->usuario_id;
 
-        // Campos con valores por defecto si no vienen
         $proyecto->proyecto_descripcion = $datos["descripcion"]  ?? "";
         $proyecto->estado_id            = $datos["estado_id"]    ?? 1;
-        $proyecto->fecha_inicio         = $datos["fecha_inicio"] ?? date("Y-m-d");
-        $proyecto->fecha_fin            = $datos["fecha_fin"]    ?? null;
+
+        // Lógica de fechas corregida: Validar incluso valores por defecto
+        $inicio = $datos["fecha_inicio"] ?? date("Y-m-d");
+        $fin    = $datos["fecha_fin"]    ?? null;
+
+        if ($fin && strtotime($inicio) > strtotime($fin)) {
+            throw new Exception("La fecha de inicio ($inicio) no puede ser mayor a la fecha fin ($fin).");
+        }
+
+        $proyecto->fecha_inicio = $inicio;
+        $proyecto->fecha_fin    = $fin;
 
         return $this->proyectoRepository->crear($proyecto);
     }
@@ -92,8 +100,17 @@ class ProyectoService
         $proyecto->proyecto_descripcion = $datos["descripcion"] ?? $proyecto->proyecto_descripcion;
         $proyecto->sucursal_id          = $datos["sucursal_id"] ?? $proyecto->sucursal_id;
         $proyecto->estado_id            = $datos["estado_id"]   ?? $proyecto->estado_id;
-        $proyecto->fecha_inicio         = $datos["fecha_inicio"] ?? $proyecto->fecha_inicio;
-        $proyecto->fecha_fin            = $datos["fecha_fin"]   ?? $proyecto->fecha_fin;
+
+        // Lógica de fechas corregida para edición
+        $nuevaInicio = $datos["fecha_inicio"] ?? $proyecto->fecha_inicio;
+        $nuevaFin    = $datos["fecha_fin"]    ?? $proyecto->fecha_fin;
+
+        if ($nuevaFin && strtotime($nuevaInicio) > strtotime($nuevaFin)) {
+            throw new Exception("La fecha de inicio no puede ser posterior a la fecha de fin.");
+        }
+
+        $proyecto->fecha_inicio = $nuevaInicio;
+        $proyecto->fecha_fin    = $nuevaFin;
 
         return $this->proyectoRepository->actualizar($proyecto);
     }
