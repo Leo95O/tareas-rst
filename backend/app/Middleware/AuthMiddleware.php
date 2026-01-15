@@ -94,10 +94,7 @@ class AuthMiddleware extends Middleware
         $app = $this->app;
         $app->response->status(401);
         $app->response->headers->set('Content-Type', 'application/json');
-        
-        // Importante: Aunque sea error, intentamos poner cabeceras CORS por si acaso el CorsMiddleware no corrió
-        $app->response->headers->set('Access-Control-Allow-Origin', '*'); 
-        
+                
         echo json_encode([
             'success' => false,
             'message' => $mensaje

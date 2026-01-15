@@ -39,21 +39,25 @@ class Auth
         return self::$secret_key;
     }
 
-    public static function generarToken($usuario)
+public static function generarToken($usuario)
     {
         $secretKey = self::getSecretKey();
 
         $ahora = time();
-        $vence = $ahora + (60 * 60 * 24);
+        $vence = $ahora + (60 * 60 * 24); 
 
         $payload = [
-            'creacion' => $ahora,
-            'expiracion' => $vence,
+
+            'iat' => $ahora,               
+            'exp' => $vence,               
+            'sub' => $usuario->usuario_id, 
+ 
+            
             'data' => [
-                'id' => $usuario->usuario_id,
+
                 'nombre' => $usuario->usuario_nombre,
                 'correo' => $usuario->usuario_correo,
-                'rol' => $usuario->rol_id
+                'rol'    => $usuario->rol_id
             ]
         ];
 

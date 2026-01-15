@@ -22,7 +22,7 @@ $app->group('/usuarios', function () use ($app, $container) {
     // --- Rutas Privadas (Admin/PM) ---
     
     // GET /usuarios/
-    $app->get('/', function () use ($container) {
+    $app->get('/admin/listar', function () use ($container) {
         $controller = $container->get(UsuarioController::class);
         $controller->listarTodo();
     });
