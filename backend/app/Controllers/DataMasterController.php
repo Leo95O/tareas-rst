@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Controllers;
+
 use App\Interfaces\DataMaster\DataMasterRepositoryInterface;
 use App\Utils\ApiResponse;
 
@@ -8,58 +9,26 @@ class DataMasterController
 {
     private $repository;
 
-    public function __construct(DataMasterRepositoryInterface $repo)
+    public function __construct(DataMasterRepositoryInterface $repository)
     {
-        $this->repository = $repo;
+        $this->repository = $repository;
     }
 
-    public function getCategorias()
+    public function obtenerCatalogos()
     {
         try {
-            $data = $this->repository->listarCategorias();
-            ApiResponse::exito("Categorías recuperadas.", $data);
-        } catch (\Exception $e) {
-            ApiResponse::error("Error: " . $e->getMessage());
-        }
-    }
+            // Empaquetamos TODOS los catálogos necesarios para la APP
+            $data = [
+                'roles'             => $this->repository->obtenerRoles(),
+                'estados_usuario'   => $this->repository->obtenerEstadosUsuario(),  // ¡Nuevo!
+                'estados_sucursal'  => $this->repository->obtenerEstadosSucursal(), // ¡Nuevo!
+                'estados_proyecto'  => $this->repository->obtenerEstadosProyecto(),
+                'estados_tarea'     => $this->repository->obtenerEstadosTarea()
+            ];
 
-    public function getPrioridades()
-    {
-        try {
-            $data = $this->repository->listarPrioridades();
-            ApiResponse::exito("Prioridades recuperadas.", $data);
+            ApiResponse::exito("Catálogos del sistema cargados correctamente.", $data);
         } catch (\Exception $e) {
-            ApiResponse::error("Error: " . $e->getMessage());
-        }
-    }
-
-    public function getEstados()
-    {
-        try {
-            $data = $this->repository->listarEstados();
-            ApiResponse::exito("Estados recuperados.", $data);
-        } catch (\Exception $e) {
-            ApiResponse::error("Error: " . $e->getMessage());
-        }
-    }
-
-    public function getSucursales()
-    {
-        try {
-            $data = $this->repository->listarSucursales();
-            ApiResponse::exito("Sucursales recuperadas.", $data);
-        } catch (\Exception $e) {
-            ApiResponse::error("Error: " . $e->getMessage());
-        }
-    }
-
-    public function getEstadosProyecto()
-    {
-        try {
-            $data = $this->repository->listarEstadosProyecto();
-            ApiResponse::exito("Estados de proyecto recuperados.", $data);
-        } catch (\Exception $e) {
-            ApiResponse::error("Error: " . $e->getMessage());
+            ApiResponse::error("Error al cargar datos maestros: " . $e->getMessage());
         }
     }
 }

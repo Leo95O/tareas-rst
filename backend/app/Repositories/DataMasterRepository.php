@@ -14,44 +14,47 @@ class DataMasterRepository implements DataMasterRepositoryInterface
         $this->conn = $connection;
     }
 
-    public function listarCategorias()
+    public function obtenerRoles()
     {
-        $sql = "SELECT categoria_id as id, categoria_nombre as nombre FROM tarea_categorias ORDER BY categoria_nombre ASC";
+        $sql = "SELECT rol_id as id, rol_nombre as nombre FROM roles ORDER BY rol_id ASC";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function listarPrioridades()
+    // --- NUEVO: Implementación para Usuarios ---
+    public function obtenerEstadosUsuario()
     {
-        $sql = "SELECT prioridad_id as id, prioridad_nombre as nombre 
-                FROM tarea_prioridades ORDER BY prioridad_valor DESC";
+        // Tabla creada en la refactorización de Usuarios
+        $sql = "SELECT estado_id as id, estado_nombre as nombre FROM usuario_estados ORDER BY estado_id ASC";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function listarEstados()
+    // --- NUEVO: Implementación para Sucursales ---
+    public function obtenerEstadosSucursal()
     {
-        $sql = "SELECT estado_id as id, estado_nombre as nombre FROM tarea_estados ORDER BY estado_orden ASC";
+        // Tabla creada en la refactorización de Sucursales
+        $sql = "SELECT estado_id as id, estado_nombre as nombre FROM sucursal_estados ORDER BY estado_id ASC";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function listarSucursales()
+    public function obtenerEstadosProyecto()
     {
-        $sql = "SELECT sucursal_id as id, sucursal_nombre as nombre, sucursal_direccion as direccion 
-                FROM sucursales ORDER BY sucursal_nombre ASC";
+        // Asumiendo que esta tabla ya existe o existirá (lo verificaremos en el módulo Proyectos)
+        $sql = "SELECT estado_id as id, estado_nombre as nombre FROM proyecto_estados ORDER BY estado_id ASC";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function listarEstadosProyecto()
+    public function obtenerEstadosTarea()
     {
-        $sql = "SELECT estado_id as id, estado_nombre as nombre 
-                FROM proyecto_estados ORDER BY estado_orden ASC";
+        // Asumiendo que esta tabla ya existe o existirá (lo verificaremos en el módulo Tareas)
+        $sql = "SELECT estado_id as id, estado_nombre as nombre FROM tarea_estados ORDER BY estado_id ASC";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

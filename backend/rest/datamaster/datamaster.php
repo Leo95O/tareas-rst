@@ -1,35 +1,25 @@
 <?php
 
 use App\Controllers\DataMasterController;
+use App\Middleware\AuthMiddleware;
+use App\Middleware\ActiveUserMiddleware;
 
+/** @var \Slim\Slim $app */
 $app = \Slim\Slim::getInstance();
 $container = $app->di;
 
-$app->group('/datamaster', function () use ($app, $container) {
+// GRUPO DATAMASTER
+// Protegido: Solo usuarios con Token válido y Cuenta Activa
+$app->group('/datamaster', 
+    AuthMiddleware::verificar($app), 
+    ActiveUserMiddleware::verificar($app),
+    function () use ($app, $container) {
 
-    $app->get('/categorias', function () use ($container) {
+    // Ruta única para hidratar todos los selectores del frontend
+    $app->get('/catalogos', function () use ($app, $container) {
+        /** @var DataMasterController $controller */
         $controller = $container->get(DataMasterController::class);
-        $controller->getCategorias();
-    });
-
-    $app->get('/prioridades', function () use ($container) {
-        $controller = $container->get(DataMasterController::class);
-        $controller->getPrioridades();
-    });
-
-    $app->get('/estados', function () use ($container) {
-        $controller = $container->get(DataMasterController::class);
-        $controller->getEstados();
-    });
-
-    $app->get('/sucursales', function () use ($container) {
-        $controller = $container->get(DataMasterController::class);
-        $controller->getSucursales();
-    });
-
-    $app->get('/estados-proyecto', function () use ($container) {
-        $controller = $container->get(DataMasterController::class);
-        $controller->getEstadosProyecto();
+        $controller->obtenerCatalogos();
     });
 
 });
