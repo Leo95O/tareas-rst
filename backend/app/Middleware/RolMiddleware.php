@@ -3,31 +3,33 @@
 namespace App\Middleware;
 
 use App\Utils\ApiResponse;
-use \Slim\Slim;
+use Slim\Slim;
 
 class RolMiddleware
 {
-    // Retorna un middleware para validar roles permitidos
+
     public static function verificar($rolesPermitidos = [])
     {
         return function () use ($rolesPermitidos) {
             $app = Slim::getInstance();
 
-            // Obtiene el usuario inyectado por el AuthMiddleware
+            // 1. Obtener usuario inyectado por AuthMiddleware
             $usuario = isset($app->usuario) ? $app->usuario : null;
 
             if (!$usuario) {
-                // Bloquea el acceso si no hay usuario autenticado
-                ApiResponse::error("Error de seguridad: Usuario no identificado.", [], 401);
-                return;
+                // Retorna 401 Unauthorized y DETIENE la ejecución
+                ApiResponse::error("Sesión no válida o expirada.", [], 401);
+                $app->stop(); // ¡Vital en Slim 2!
             }
 
-            // Verifica si el rol del usuario está permitido
+            // 2. Verificar Rol
             if (!in_array($usuario->rol_id, $rolesPermitidos)) {
-                ApiResponse::error("Acceso denegado. No tienes permisos suficientes para realizar esta acción.", [], 403);
+                // Retorna 403 Forbidden y DETIENE la ejecución
+                ApiResponse::error("Acceso denegado. Permisos insuficientes.", [], 403);
+                $app->stop(); // ¡Vital en Slim 2!
             }
 
-            // Continúa la ejecución si pasa la validación
+            // Si pasa, Slim continúa automáticamente al siguiente callable
         };
     }
 }

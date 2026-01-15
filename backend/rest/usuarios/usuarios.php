@@ -5,65 +5,42 @@ use App\Controllers\UsuarioController;
 $app = \Slim\Slim::getInstance();
 $container = $app->di;
 
+// Rutas Públicas
+$app->post('/registro', function () use ($container) {
+    $controller = $container->get(UsuarioController::class);
+    $controller->registrar();
+});
+
+$app->post('/login', function () use ($container) {
+    $controller = $container->get(UsuarioController::class);
+    $controller->login();
+});
+
+// Rutas Privadas (Admin)
 $app->group('/usuarios', function () use ($app, $container) {
 
-    $app->post('/registro', function () use ($app, $container) {
-
-        $datos = json_decode($app->request->getBody(), true);
-        
+    // Listar usuarios (Admin/PM)
+    $app->get('/', function () use ($container) {
         $controller = $container->get(UsuarioController::class);
-
-        $controller->registrar($datos);
+        $controller->listarTodo();
     });
 
-
-    $app->post('/login', function () use ($app, $container) {
-        $datos = json_decode($app->request->getBody(), true);
-        
+    // Crear usuario desde panel Admin
+    $app->post('/', function () use ($container) {
         $controller = $container->get(UsuarioController::class);
-        $controller->login($datos);
+        $controller->crearAdmin();
     });
 
-    // --- Rutas Privadas (Admin/PM) ---
-
-
-    // GET /usuarios/admin/listar
-    $app->get('/admin/listar', function () use ($app, $container) {
-        // Obtenemos parámetros de URL (Query Params) si los hubiera
-        $rolId = $app->request->get('rol_id');
-        $usuarioLogueado = $app->usuario; // Inyectado por AuthMiddleware
-
+    // Editar usuario desde panel Admin
+    $app->put('/:id', function ($id) use ($container) {
         $controller = $container->get(UsuarioController::class);
-        $controller->listarTodo($usuarioLogueado, $rolId);
+        $controller->editarAdmin($id);
     });
 
-    // POST /usuarios/ (Crear Admin)
-    $app->post('/admin/crear', function () use ($app, $container) {
-
-        $datos = json_decode($app->request->getBody(), true);
-
-        $usuarioLogueado = $app->usuario;
-
+    // Eliminar usuario
+    $app->delete('/:id', function ($id) use ($container) {
         $controller = $container->get(UsuarioController::class);
-    
-        $controller->crearAdmin($datos, $usuarioLogueado);
-    });
-
-    // PUT /usuarios/:id
-    $app->put('/admin/editar/:id', function ($id) use ($app, $container){
-        $datos = json_decode($app->request->getBody(), true);
-        $usuarioLogueado = $app->usuario;
-
-        $controller = $container->get(UsuarioController::class);
-        $controller->editarAdmin($id, $datos, $usuarioLogueado);
-    });
-
-    // DELETE /usuarios/:id
-    $app->delete('/:id', function ($id) use ($app, $container) {
-        $usuarioLogueado = $app->usuario;
-
-        $controller = $container->get(UsuarioController::class);
-        $controller->eliminarAdmin($id, $usuarioLogueado);
+        $controller->eliminarAdmin($id);
     });
 
 });
