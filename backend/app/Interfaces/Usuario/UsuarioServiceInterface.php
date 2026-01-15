@@ -2,14 +2,14 @@
 
 namespace App\Interfaces\Usuario;
 
+use App\Entities\Usuario;
+
 interface UsuarioServiceInterface
 {
-
-    public function registrarUsuario($datos);
     public function loginUsuario($correo, $password);
-    public function guardarTokenSesion($id, $token);
-    public function listarUsuariosAdmin($usuarioLogueado, $filtroRol);
-    public function crearUsuarioAdmin($datos, $usuarioLogueado);
-    public function editarUsuarioAdmin($id, $datos, $usuarioLogueado);
-    public function eliminarUsuarioAdmin($id, $usuarioLogueado);
+    public function guardarTokenSesion($usuarioId, $token);
+    public function listarUsuariosAdmin($filtroRol = null);
+    public function crearUsuarioAdmin($datos);
+    public function editarUsuarioAdmin($id, $datos);
+    public function eliminarUsuarioAdmin($id, $usuarioLogueadoId);
 }

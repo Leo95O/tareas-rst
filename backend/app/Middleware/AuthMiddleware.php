@@ -2,102 +2,57 @@
 
 namespace App\Middleware;
 
-use Slim\Middleware;
-use App\Interfaces\Usuario\UsuarioRepositoryInterface;
+use Slim\Slim;
 use App\Utils\ApiResponse;
-use App\Utils\Auth; // Asegúrate de tener este Use
+use App\Utils\Auth;
+use Exception;
 
-class AuthMiddleware extends Middleware
+class AuthMiddleware
 {
-    private $usuarioRepo;
-
-    // Rutas públicas que no requieren token
-    private $rutasPublicas = [
-        '/usuarios/login',
-        '/usuarios/registro',
-        '/datamaster/categorias', // Si estas son públicas
-        '/datamaster/prioridades',
-        '/datamaster/estados',
-        '/datamaster/sucursales',
-        '/datamaster/estados-proyecto'
+    // Lista de rutas que NO requieren token
+    private static $rutasPublicas = [
+        '/usuarios/login', 
+        // Eliminado: '/usuarios/registro' ya no es pública ni existe
     ];
 
-    public function __construct(UsuarioRepositoryInterface $repo)
+    public static function verificar(Slim $app)
     {
-        $this->usuarioRepo = $repo;
-    }
+        return function () use ($app) {
+            $req = $app->request;
+            $rutaActual = $req->getResourceUri();
 
-    public function call()
-    {
-        $app = $this->app;
-        $req = $app->request;
-        $res = $app->response;
-        
-        // 1. CORRECCIÓN CRÍTICA: Permitir siempre las peticiones OPTIONS (CORS Preflight)
-        if ($req->isOptions()) {
-            $this->next->call();
-            return;
-        }
-
-        $rutaActual = $req->getResourceUri();
-
-        // 2. Si la ruta es pública, dejamos pasar
-        // (Mejoramos la lógica para que coincida aunque haya slash final)
-        foreach ($this->rutasPublicas as $ruta) {
-            if (strpos($rutaActual, $ruta) === 0) { // Coincidencia parcial o exacta
-                $this->next->call();
-                return;
-            }
-        }
-
-        // 3. Validar Token para rutas privadas
-        $authHeader = $req->headers->get('Authorization');
-
-        if (!$authHeader) {
-            $this->denegarAcceso("Token de autorización no proporcionado.");
-            return;
-        }
-
-        list($token) = sscanf($authHeader, 'Bearer %s');
-
-        if (!$token) {
-            $this->denegarAcceso("Formato de token inválido.");
-            return;
-        }
-
-        try {
-            // Decodificar Token
-            $decoded = Auth::verificarToken($token);
-
-            // Verificar si el token en BD sigue siendo el mismo (Single Session)
-            // (Opcional, depende de tu lógica estricta, pero recomendado)
-            $usuario = $this->usuarioRepo->obtenerPorId($decoded->sub);
-            
-            if (!$usuario || $usuario->usuario_token !== $token) {
-                 $this->denegarAcceso("Sesión inválida o expirada.");
-                 return;
+            // 1. Permitir acceso si la ruta está en la lista blanca
+            foreach (self::$rutasPublicas as $ruta) {
+                // Verificamos si la ruta actual EMPIEZA con una ruta pública
+                if (strpos($rutaActual, $ruta) === 0) {
+                    return; // Pasa sin validar token
+                }
             }
 
-            // Inyectar usuario en la app para los controladores
-            $app->usuario = $usuario;
+            // 2. Obtener header Authorization
+            $authHeader = $req->headers->get('Authorization');
 
-            // Continuar
-            $this->next->call();
+            if (!$authHeader || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+                ApiResponse::error("Token no proporcionado o formato inválido.", [], 401);
+                $app->stop();
+            }
 
-        } catch (\Exception $e) {
-            $this->denegarAcceso("Token inválido o expirado: " . $e->getMessage());
-        }
-    }
+            $token = $matches[1];
 
-    private function denegarAcceso($mensaje)
-    {
-        $app = $this->app;
-        $app->response->status(401);
-        $app->response->headers->set('Content-Type', 'application/json');
-                
-        echo json_encode([
-            'success' => false,
-            'message' => $mensaje
-        ]);
+            try {
+                // 3. Validar Token
+                $usuarioDecodificado = Auth::verificarToken($token);
+
+                if (!$usuarioDecodificado) {
+                    throw new Exception("Token inválido.");
+                }
+
+                $app->usuario = $usuarioDecodificado;
+
+            } catch (Exception $e) {
+                ApiResponse::error("Acceso denegado: " . $e->getMessage(), [], 401);
+                $app->stop();
+            }
+        };
     }
 }

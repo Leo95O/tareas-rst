@@ -16,27 +16,13 @@ class UsuarioController
         $this->usuarioService = $service;
     }
 
-    // MÉTODOS PÚBLICOS
-
-    public function registrar($datos)
-    {
-        try {
-            UsuarioValidator::validarRegistro($datos);
-
-            $nuevoId = $this->usuarioService->registrarUsuario($datos);
-
-            ApiResponse::exito("Usuario registrado correctamente.", ['id' => $nuevoId]);
-
-        } catch (\Exception $e) {
-            ApiResponse::alerta($e->getMessage());
-        }
-    }
+    // --- MÉTODOS PÚBLICOS ---
 
     public function login($datos)
     {
         try {
             UsuarioValidator::validarLogin($datos);
-
+            
             $usuario = $this->usuarioService->loginUsuario(
                 $datos['usuario_correo'],
                 $datos['usuario_password']
@@ -51,53 +37,45 @@ class UsuarioController
             ];
 
             ApiResponse::exito("Inicio de sesión exitoso.", $respuesta);
-
         } catch (\Exception $e) {
             ApiResponse::alerta($e->getMessage());
         }
     }
 
-    // MÉTODOS DE ADMINISTRADOR
+    // --- MÉTODOS DE ADMINISTRADOR ---
 
-    public function listarTodo($usuarioLogueado, $filtroRol = null)
+    public function listarTodo($filtroRol = null)
     {
         try {
-            $lista = $this->usuarioService->listarUsuariosAdmin($usuarioLogueado, $filtroRol);
-
+            $lista = $this->usuarioService->listarUsuariosAdmin($filtroRol);
+            
             $data = array_map(function ($u) {
                 return $u->toArray();
             }, $lista);
 
             ApiResponse::exito("Lista de usuarios.", $data);
-
         } catch (\Exception $e) {
             ApiResponse::alerta($e->getMessage());
         }
     }
 
-    public function crearAdmin($datos, $usuarioLogueado)
+    public function crearAdmin($datos)
     {
         try {
             UsuarioValidator::validarCreacionAdmin($datos);
-
-            $id = $this->usuarioService->crearUsuarioAdmin($datos, $usuarioLogueado);
-
+            $id = $this->usuarioService->crearUsuarioAdmin($datos);
             ApiResponse::exito("Usuario creado por admin.", ['id' => $id]);
-
         } catch (\Exception $e) {
             ApiResponse::alerta($e->getMessage());
         }
     }
 
-    public function editarAdmin($id, $datos, $usuarioLogueado)
+    public function editarAdmin($id, $datos)
     {
         try {
             UsuarioValidator::validarEdicionAdmin($datos);
-
-            $this->usuarioService->editarUsuarioAdmin($id, $datos, $usuarioLogueado);
-
+            $this->usuarioService->editarUsuarioAdmin($id, $datos);
             ApiResponse::exito("Usuario actualizado.");
-
         } catch (\Exception $e) {
             ApiResponse::alerta($e->getMessage());
         }
@@ -106,10 +84,8 @@ class UsuarioController
     public function eliminarAdmin($id, $usuarioLogueado)
     {
         try {
-            $this->usuarioService->eliminarUsuarioAdmin($id, $usuarioLogueado);
-
+            $this->usuarioService->eliminarUsuarioAdmin($id, $usuarioLogueado->usuario_id);
             ApiResponse::exito("Usuario eliminado (Soft Delete).");
-
         } catch (\Exception $e) {
             ApiResponse::alerta($e->getMessage());
         }
