@@ -2,18 +2,26 @@
 
 namespace App\Middleware;
 
-use \Slim\Middleware;
+use Slim\Middleware;
+use App\Interfaces\Usuario\UsuarioRepositoryInterface;
 use App\Utils\ApiResponse;
-use App\Utils\Auth;
-// Borramos "use App\Repositories\UsuarioRepository;" porque ya no la instanciamos directamente
-use App\Interfaces\UsuarioRepositoryInterface;
+use App\Utils\Auth; // Asegúrate de tener este Use
 
-// Capa de protección previa al controlador
 class AuthMiddleware extends Middleware
 {
     private $usuarioRepo;
 
-    // 1. INYECCIÓN DE DEPENDENCIA (CORRECTO)
+    // Rutas públicas que no requieren token
+    private $rutasPublicas = [
+        '/usuarios/login',
+        '/usuarios/registro',
+        '/datamaster/categorias', // Si estas son públicas
+        '/datamaster/prioridades',
+        '/datamaster/estados',
+        '/datamaster/sucursales',
+        '/datamaster/estados-proyecto'
+    ];
+
     public function __construct(UsuarioRepositoryInterface $repo)
     {
         $this->usuarioRepo = $repo;
@@ -21,57 +29,78 @@ class AuthMiddleware extends Middleware
 
     public function call()
     {
-        $rutasPublicas = [
-            '/usuarios/login',
-            '/usuarios/registro',
-            '/'
-        ];
-
-        $rutaActual = $this->app->request->getPathInfo();
-
-        if (in_array($rutaActual, $rutasPublicas)) {
+        $app = $this->app;
+        $req = $app->request;
+        $res = $app->response;
+        
+        // 1. CORRECCIÓN CRÍTICA: Permitir siempre las peticiones OPTIONS (CORS Preflight)
+        if ($req->isOptions()) {
             $this->next->call();
             return;
         }
 
-        $app = $this->app;
-        $headers = $app->request->headers;
-        $authHeader = $headers->get('Authorization');
+        $rutaActual = $req->getResourceUri();
+
+        // 2. Si la ruta es pública, dejamos pasar
+        // (Mejoramos la lógica para que coincida aunque haya slash final)
+        foreach ($this->rutasPublicas as $ruta) {
+            if (strpos($rutaActual, $ruta) === 0) { // Coincidencia parcial o exacta
+                $this->next->call();
+                return;
+            }
+        }
+
+        // 3. Validar Token para rutas privadas
+        $authHeader = $req->headers->get('Authorization');
 
         if (!$authHeader) {
-            ApiResponse::error("Acceso denegado. Ruta protegida.", [], 401);
+            $this->denegarAcceso("Token de autorización no proporcionado.");
             return;
         }
 
         list($token) = sscanf($authHeader, 'Bearer %s');
 
         if (!$token) {
-            ApiResponse::error("Formato de token inválido.", [], 401);
+            $this->denegarAcceso("Formato de token inválido.");
             return;
         }
 
         try {
+            // Decodificar Token
             $decoded = Auth::verificarToken($token);
-            $usuarioId = $decoded->data->id;
 
-            // --- AQUÍ ESTABA EL ERROR ---
-            // Antes tenías: $repo = new UsuarioRepository(); (ESTO FALLARÍA)
+            // Verificar si el token en BD sigue siendo el mismo (Single Session)
+            // (Opcional, depende de tu lógica estricta, pero recomendado)
+            $usuario = $this->usuarioRepo->obtenerPorId($decoded->sub);
             
-            // AHORA: Usamos la propiedad que inyectamos en el constructor
-            $usuario = $this->usuarioRepo->obtenerPorId($usuarioId);
-
             if (!$usuario || $usuario->usuario_token !== $token) {
-                ApiResponse::error("Sesión inválida o expirada.", [], 401);
-                return;
+                 $this->denegarAcceso("Sesión inválida o expirada.");
+                 return;
             }
 
-            // Inyectamos el usuario en la app para que otros controladores lo usen
+            // Inyectar usuario en la app para los controladores
             $app->usuario = $usuario;
 
+            // Continuar
             $this->next->call();
 
         } catch (\Exception $e) {
-            ApiResponse::error("Token inválido: " . $e->getMessage(), [], 401);
+            $this->denegarAcceso("Token inválido o expirado: " . $e->getMessage());
         }
+    }
+
+    private function denegarAcceso($mensaje)
+    {
+        $app = $this->app;
+        $app->response->status(401);
+        $app->response->headers->set('Content-Type', 'application/json');
+        
+        // Importante: Aunque sea error, intentamos poner cabeceras CORS por si acaso el CorsMiddleware no corrió
+        $app->response->headers->set('Access-Control-Allow-Origin', '*'); 
+        
+        echo json_encode([
+            'success' => false,
+            'message' => $mensaje
+        ]);
     }
 }

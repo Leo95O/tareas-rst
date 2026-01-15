@@ -2,7 +2,6 @@
 
 use DI\ContainerBuilder;
 use App\Config\Database;
-use PDO;
 
 // 1. Importar Interfaces (AJUSTADO A LAS CARPETAS CORRECTAS)
 use App\Interfaces\DataMaster\DataMasterRepositoryInterface;
