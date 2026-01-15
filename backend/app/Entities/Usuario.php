@@ -2,7 +2,7 @@
 
 namespace App\Entities;
 
-use App\Constants\EstadoUsuario;
+use App\Constans\Estados;
 
 class Usuario
 {
@@ -12,15 +12,14 @@ class Usuario
     public $usuario_password;
     public $usuario_token;
     
-    // 1. Relación con ROL (Foreign Key + Objeto)
     public $rol_id;
     /** @var Rol|null */
     public $rol;
 
-    // 2. Relación con ESTADO (Foreign Key + Objeto)
-    public $usuario_estado; // El ID en la tabla usuarios (int)
-    /** @var EstadoUsuario|null */
-    public $estado;         // El objeto completo hidratado
+    public $usuario_estado;
+
+    /** @var Estados|null */
+    public $estado; // PHP busca App\Entities\EstadoUsuario automáticamente
 
     public $fecha_creacion;
 
@@ -28,7 +27,6 @@ class Usuario
     {
         if (!empty($data)) {
             foreach ($data as $key => $value) {
-                // Evitamos sobrescribir las propiedades de objeto si vienen datos planos
                 if (property_exists($this, $key) && $key !== 'rol' && $key !== 'estado') {
                     $this->$key = $value;
                 }
@@ -36,35 +34,34 @@ class Usuario
         }
     }
 
-    // --- Setters para Inyección de Dependencias (Composición) ---
+    // --- Setters ---
 
     public function setRol(Rol $rol)
     {
         $this->rol = $rol;
         if ($rol->rol_id) {
-            $this->rol_id = $rol->rol_id; // Mantenemos sincronía
+            $this->rol_id = $rol->rol_id; 
         }
     }
 
-    public function setEstado(EstadoUsuario $estado)
+    public function setEstado(Estados $estado)
     {
         $this->estado = $estado;
         if ($estado->estado_id) {
-            $this->usuario_estado = $estado->estado_id; // Mantenemos sincronía
+            $this->usuario_estado = $estado->estado_id; 
         }
     }
 
-    // --- Lógica de Negocio (Domain Logic) ---
+    // --- Lógica de Negocio ---
 
     public function estaActivo()
     {
-        // Prioridad al objeto hidratado, fallback al ID crudo
+        // Se lee natural: "¿El estado ID es igual a Estados::ACTIVO?"
         if ($this->estado) {
-            return $this->estado->estado_id === EstadoUsuario::ACTIVO;
+            return $this->estado->estado_id === Estados::ACTIVO;
         }
-        return (int)$this->usuario_estado === EstadoUsuario::ACTIVO;
+        return (int)$this->usuario_estado === Estados::ACTIVO;
     }
-
     public function esAdmin()
     {
         return $this->rol_id == 1 || ($this->rol && $this->rol->rol_id == 1);
@@ -77,15 +74,13 @@ class Usuario
             'usuario_nombre'  => $this->usuario_nombre,
             'usuario_correo'  => $this->usuario_correo,
             
-            // Info de Rol
             'rol_id'          => $this->rol_id,
             'rol'             => $this->rol ? [
                 'id' => $this->rol->rol_id,
                 'nombre' => $this->rol->rol_nombre
             ] : null,
 
-            // Info de Estado (Nueva estructura rica)
-            'usuario_estado'  => $this->usuario_estado, // Mantenemos el ID plano por si acaso
+            'usuario_estado'  => $this->usuario_estado,
             'estado'          => $this->estado ? [
                 'id' => $this->estado->estado_id,
                 'nombre' => $this->estado->estado_nombre,

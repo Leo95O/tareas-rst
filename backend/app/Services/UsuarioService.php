@@ -8,7 +8,7 @@ use App\Interfaces\LoginGuard\LoginGuardServiceInterface;
 use App\Entities\Usuario;
 use App\Utils\Crypto;
 use App\Constants\Roles;
-use App\Constants\EstadoUsuario;
+use App\Constans\Estados;
 use Exception;
 
 class UsuarioService implements UsuarioServiceInterface
@@ -91,7 +91,7 @@ class UsuarioService implements UsuarioServiceInterface
         // El Admin decide el estado (por defecto ACTIVO)
         $nuevo->usuario_estado = isset($datos['usuario_estado']) 
             ? $datos['usuario_estado'] 
-            : EstadoUsuario::ACTIVO;
+            : Estados::ACTIVO;
 
         return $this->usuarioRepository->crearUsuario($nuevo);
     }
