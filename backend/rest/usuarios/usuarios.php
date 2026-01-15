@@ -5,33 +5,37 @@ use App\Controllers\UsuarioController;
 $app = \Slim\Slim::getInstance();
 $container = $app->di;
 
-// Rutas Públicas
-$app->post('/registro', function () use ($container) {
-    $controller = $container->get(UsuarioController::class);
-    $controller->registrar();
-});
-
-$app->post('/login', function () use ($container) {
-    $controller = $container->get(UsuarioController::class);
-    $controller->login();
-});
-
-// Rutas Privadas (Admin)
+// CAMBIO: Iniciamos el grupo '/usuarios' desde el principio
 $app->group('/usuarios', function () use ($app, $container) {
 
-    // Listar usuarios (Admin/PM)
+    // Ahora la ruta será: /usuarios/registro
+    $app->post('/registro', function () use ($container) {
+        $controller = $container->get(UsuarioController::class);
+        $controller->registrar();
+    });
+
+    // Ahora la ruta será: /usuarios/login (Coincide con tu Frontend)
+    $app->post('/login', function () use ($container) {
+        $controller = $container->get(UsuarioController::class);
+        $controller->login();
+    });
+
+    // Rutas Privadas (Admin/PM)
+    // Ya estamos dentro de /usuarios, así que estas rutas son /usuarios/ (listar), /usuarios/:id, etc.
+    
+    // Listar usuarios
     $app->get('/', function () use ($container) {
         $controller = $container->get(UsuarioController::class);
         $controller->listarTodo();
     });
 
-    // Crear usuario desde panel Admin
+    // Crear usuario admin
     $app->post('/', function () use ($container) {
         $controller = $container->get(UsuarioController::class);
         $controller->crearAdmin();
     });
 
-    // Editar usuario desde panel Admin
+    // Editar usuario
     $app->put('/:id', function ($id) use ($container) {
         $controller = $container->get(UsuarioController::class);
         $controller->editarAdmin($id);
