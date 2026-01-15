@@ -2,7 +2,8 @@
 
 namespace App\Entities;
 
-use App\Constans\Estados;
+use App\Constans\Estados; // Para evitar el número mágico 1 (Activo)
+use App\Constans\Roles;   // Para evitar el número mágico 1 (Admin)
 
 class Usuario
 {
@@ -14,12 +15,12 @@ class Usuario
     
     public $rol_id;
     /** @var Rol|null */
-    public $rol;
+    public $rol; // PHP detecta automáticamente App\Entities\Rol
 
     public $usuario_estado;
 
-    /** @var Estados|null */
-    public $estado; // PHP busca App\Entities\EstadoUsuario automáticamente
+    /** @var EstadoUsuario|null */
+    public $estado; // PHP detecta automáticamente App\Entities\EstadoUsuario
 
     public $fecha_creacion;
 
@@ -27,6 +28,7 @@ class Usuario
     {
         if (!empty($data)) {
             foreach ($data as $key => $value) {
+                // Protección contra inyección de datos planos en propiedades de objeto
                 if (property_exists($this, $key) && $key !== 'rol' && $key !== 'estado') {
                     $this->$key = $value;
                 }
@@ -34,37 +36,46 @@ class Usuario
         }
     }
 
-    // --- Setters ---
+    // --- Setters con Inyección de Dependencias ---
 
     public function setRol(Rol $rol)
     {
         $this->rol = $rol;
+        // Mantenemos la integridad referencial del ID
         if ($rol->rol_id) {
             $this->rol_id = $rol->rol_id; 
         }
     }
 
-    public function setEstado(Estados $estado)
+    /**
+     * Aquí estaba el error: Debemos esperar la Entidad (EstadoUsuario), no la Constante (Estados).
+     * La Entidad tiene datos ($estado_id), la Constante solo tiene valores fijos.
+     */
+    public function setEstado(EstadoUsuario $estado)
     {
         $this->estado = $estado;
+        // Sincronizamos el ID plano con el objeto
         if ($estado->estado_id) {
             $this->usuario_estado = $estado->estado_id; 
         }
     }
 
-    // --- Lógica de Negocio ---
+    // --- Lógica de Negocio (Domain Logic) ---
 
     public function estaActivo()
     {
-        // Se lee natural: "¿El estado ID es igual a Estados::ACTIVO?"
+        // Usamos la constante (Estados::ACTIVO) para evitar números mágicos
         if ($this->estado) {
+            // Comparamos el dato de la Entidad contra la Constante
             return $this->estado->estado_id === Estados::ACTIVO;
         }
         return (int)$this->usuario_estado === Estados::ACTIVO;
     }
+
     public function esAdmin()
     {
-        return $this->rol_id == 1 || ($this->rol && $this->rol->rol_id == 1);
+        // Usamos la constante (Roles::ADMIN) para evitar el número mágico "1"
+        return $this->rol_id == Roles::ADMIN || ($this->rol && $this->rol->rol_id == Roles::ADMIN);
     }
 
     public function toArray()
@@ -81,6 +92,8 @@ class Usuario
             ] : null,
 
             'usuario_estado'  => $this->usuario_estado,
+            
+            // Mapeo limpio para el Frontend
             'estado'          => $this->estado ? [
                 'id' => $this->estado->estado_id,
                 'nombre' => $this->estado->estado_nombre,
