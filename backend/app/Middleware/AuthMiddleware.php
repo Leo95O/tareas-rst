@@ -9,25 +9,25 @@ use Exception;
 
 class AuthMiddleware
 {
-    // Lista de rutas que NO requieren token
+    // Definimos las rutas exactas que son públicas dentro de este módulo
     private static $rutasPublicas = [
-        '/usuarios/login', 
-        // Eliminado: '/usuarios/registro' ya no es pública ni existe
+        '/usuarios/login'
     ];
 
     public static function verificar(Slim $app)
     {
         return function () use ($app) {
             $req = $app->request;
+            // Obtenemos la ruta relativa (resource URI)
             $rutaActual = $req->getResourceUri();
 
-            // 1. Permitir acceso si la ruta está en la lista blanca
-            foreach (self::$rutasPublicas as $ruta) {
-                // Verificamos si la ruta actual EMPIEZA con una ruta pública
-                if (strpos($rutaActual, $ruta) === 0) {
-                    return; // Pasa sin validar token
-                }
+            // 1. VALIDACIÓN DE LISTA BLANCA (STRICT MODE)
+            // Si la ruta es pública, interrumpimos el middleware y dejamos pasar.
+            if (in_array($rutaActual, self::$rutasPublicas)) {
+                return;
             }
+
+            // --- DE AQUÍ PARA ABAJO, TODO ES PRIVADO ---
 
             // 2. Obtener header Authorization
             $authHeader = $req->headers->get('Authorization');
@@ -47,6 +47,7 @@ class AuthMiddleware
                     throw new Exception("Token inválido.");
                 }
 
+                // Inyectamos el usuario para que RolMiddleware lo consuma después
                 $app->usuario = $usuarioDecodificado;
 
             } catch (Exception $e) {

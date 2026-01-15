@@ -2,67 +2,96 @@
 
 namespace App\Entities;
 
+use App\Constants\EstadoUsuario;
+
 class Usuario
 {
     public $usuario_id;
     public $usuario_nombre; 
     public $usuario_correo;
-    public $usuario_password; // Normalmente esto no se debería serializar, pero lo mantenemos por tu estructura
+    public $usuario_password;
     public $usuario_token;
     
-    public $rol_id;         // La clave foránea (útil para lógica rápida)
-    
+    // 1. Relación con ROL (Foreign Key + Objeto)
+    public $rol_id;
     /** @var Rol|null */
-    public $rol;            // ¡LA FORMA CORRECTA! Objeto completo, no un string suelto.
-    
-    public $usuario_estado;
+    public $rol;
+
+    // 2. Relación con ESTADO (Foreign Key + Objeto)
+    public $usuario_estado; // El ID en la tabla usuarios (int)
+    /** @var EstadoUsuario|null */
+    public $estado;         // El objeto completo hidratado
+
     public $fecha_creacion;
 
     public function __construct($data = [])
     {
         if (!empty($data)) {
-            // Asignación dinámica básica
             foreach ($data as $key => $value) {
-                if (property_exists($this, $key) && $key !== 'rol') {
+                // Evitamos sobrescribir las propiedades de objeto si vienen datos planos
+                if (property_exists($this, $key) && $key !== 'rol' && $key !== 'estado') {
                     $this->$key = $value;
                 }
             }
         }
     }
 
-    // Método helper para inyectar el objeto Rol
+    // --- Setters para Inyección de Dependencias (Composición) ---
+
     public function setRol(Rol $rol)
     {
         $this->rol = $rol;
-        // Aseguramos consistencia
         if ($rol->rol_id) {
-            $this->rol_id = $rol->rol_id;
+            $this->rol_id = $rol->rol_id; // Mantenemos sincronía
         }
     }
 
+    public function setEstado(EstadoUsuario $estado)
+    {
+        $this->estado = $estado;
+        if ($estado->estado_id) {
+            $this->usuario_estado = $estado->estado_id; // Mantenemos sincronía
+        }
+    }
+
+    // --- Lógica de Negocio (Domain Logic) ---
+
     public function estaActivo()
     {
-        return $this->usuario_estado == 1;
+        // Prioridad al objeto hidratado, fallback al ID crudo
+        if ($this->estado) {
+            return $this->estado->estado_id === EstadoUsuario::ACTIVO;
+        }
+        return (int)$this->usuario_estado === EstadoUsuario::ACTIVO;
     }
 
     public function esAdmin()
     {
-        // Validación robusta: mira el ID o el Objeto
         return $this->rol_id == 1 || ($this->rol && $this->rol->rol_id == 1);
     }
 
     public function toArray()
     {
-        // Aquí decidimos cómo se ve el JSON para el Frontend.
-        // Podemos "aplanar" el nombre del rol aquí para facilitar la vida al frontend
-        // sin ensuciar la estructura interna de la clase.
         return [
             'usuario_id'      => $this->usuario_id,
             'usuario_nombre'  => $this->usuario_nombre,
             'usuario_correo'  => $this->usuario_correo,
+            
+            // Info de Rol
             'rol_id'          => $this->rol_id,
-            'rol_nombre'      => $this->rol ? $this->rol->rol_nombre : null, // Extraemos del objeto hijo
-            'usuario_estado'  => $this->usuario_estado,
+            'rol'             => $this->rol ? [
+                'id' => $this->rol->rol_id,
+                'nombre' => $this->rol->rol_nombre
+            ] : null,
+
+            // Info de Estado (Nueva estructura rica)
+            'usuario_estado'  => $this->usuario_estado, // Mantenemos el ID plano por si acaso
+            'estado'          => $this->estado ? [
+                'id' => $this->estado->estado_id,
+                'nombre' => $this->estado->estado_nombre,
+                'descripcion' => $this->estado->estado_descripcion
+            ] : null,
+
             'fecha_creacion'  => $this->fecha_creacion
         ];
     }
