@@ -2,34 +2,27 @@
 
 namespace App\Controllers;
 
-// 1. CAMBIO: Usamos la Interfaz del servicio
 use App\Interfaces\Usuario\UsuarioServiceInterface;
 use App\Utils\ApiResponse;
 use App\Utils\Auth;
 use App\Validators\UsuarioValidator;
-use \Slim\Slim;
 
 class UsuarioController
 {
     private $usuarioService;
 
-    // 2. CAMBIO: Inyección de Dependencias en el constructor
     public function __construct(UsuarioServiceInterface $service)
     {
         $this->usuarioService = $service;
     }
 
-    // MÉTODOS PÚBLICOS (Registro y Login)
-    public function registrar()
+    // MÉTODOS PÚBLICOS
+
+    public function registrar($datos)
     {
         try {
-            $app = Slim::getInstance();
-            $datos = json_decode($app->request->getBody(), true);
-
-            // Validar datos con el Validator
             UsuarioValidator::validarRegistro($datos);
 
-            // Registrar (Por defecto Rol 3)
             $nuevoId = $this->usuarioService->registrarUsuario($datos);
 
             ApiResponse::exito("Usuario registrado correctamente.", ['id' => $nuevoId]);
@@ -39,25 +32,17 @@ class UsuarioController
         }
     }
 
-    // Metodo login() del frontend
-    public function login()
+    public function login($datos)
     {
         try {
-            $app = Slim::getInstance();
-            $datos = json_decode($app->request->getBody(), true);
-
             UsuarioValidator::validarLogin($datos);
 
-            // Validar credenciales (incluye lógica de bloqueo)
             $usuario = $this->usuarioService->loginUsuario(
                 $datos['usuario_correo'],
                 $datos['usuario_password']
             );
 
-            // Generar Token JWT
             $tokenJwt = Auth::generarToken($usuario);
-
-            // Guardar sesión en BD
             $this->usuarioService->guardarTokenSesion($usuario->usuario_id, $tokenJwt);
 
             $respuesta = [
@@ -72,19 +57,13 @@ class UsuarioController
         }
     }
 
-    // MÉTODOS DE ADMINISTRADOR (Gestión)
-    public function listarTodo()
+    // MÉTODOS DE ADMINISTRADOR
+
+    public function listarTodo($usuarioLogueado, $filtroRol = null)
     {
         try {
-            $app = Slim::getInstance();
-            $usuarioLogueado = $app->usuario; // Inyectado por Middleware
-
-            // Filtro opcional por URL (ej: ?rol_id=2)
-            $filtroRol = $app->request->get('rol_id');
-
             $lista = $this->usuarioService->listarUsuariosAdmin($usuarioLogueado, $filtroRol);
 
-            // Mapear a array
             $data = array_map(function ($u) {
                 return $u->toArray();
             }, $lista);
@@ -96,13 +75,9 @@ class UsuarioController
         }
     }
 
-    public function crearAdmin()
+    public function crearAdmin($datos, $usuarioLogueado)
     {
         try {
-            $app = Slim::getInstance();
-            $datos = json_decode($app->request->getBody(), true);
-            $usuarioLogueado = $app->usuario;
-
             UsuarioValidator::validarCreacionAdmin($datos);
 
             $id = $this->usuarioService->crearUsuarioAdmin($datos, $usuarioLogueado);
@@ -114,13 +89,9 @@ class UsuarioController
         }
     }
 
-    public function editarAdmin($id)
+    public function editarAdmin($id, $datos, $usuarioLogueado)
     {
         try {
-            $app = Slim::getInstance();
-            $datos = json_decode($app->request->getBody(), true);
-            $usuarioLogueado = $app->usuario;
-
             UsuarioValidator::validarEdicionAdmin($datos);
 
             $this->usuarioService->editarUsuarioAdmin($id, $datos, $usuarioLogueado);
@@ -132,12 +103,9 @@ class UsuarioController
         }
     }
 
-    public function eliminarAdmin($id)
+    public function eliminarAdmin($id, $usuarioLogueado)
     {
         try {
-            $app = Slim::getInstance();
-            $usuarioLogueado = $app->usuario;
-
             $this->usuarioService->eliminarUsuarioAdmin($id, $usuarioLogueado);
 
             ApiResponse::exito("Usuario eliminado (Soft Delete).");
