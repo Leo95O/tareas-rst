@@ -30,12 +30,13 @@ class SucursalController
         }
     }
 
-    public function crear($datos, $usuarioLogueado)
+    // Eliminamos $usuarioLogueado
+    public function crear($datos)
     {
         try {
             SucursalValidator::validar($datos);
             
-            $id = $this->sucursalService->crearSucursal($datos, $usuarioLogueado);
+            $id = $this->sucursalService->crearSucursal($datos);
             
             ApiResponse::exito("Sucursal creada correctamente.", ['id' => $id]);
         } catch (\Exception $e) {
@@ -43,13 +44,13 @@ class SucursalController
         }
     }
 
-    public function editar($id, $datos, $usuarioLogueado)
+    // Eliminamos $usuarioLogueado
+    public function editar($id, $datos)
     {
         try {
-            // Validamos campos básicos si vienen
             if (empty($datos)) throw new \Exception("No se enviaron datos.");
 
-            $this->sucursalService->editarSucursal($id, $datos, $usuarioLogueado);
+            $this->sucursalService->editarSucursal($id, $datos);
             
             ApiResponse::exito("Sucursal actualizada.");
         } catch (\Exception $e) {
@@ -57,10 +58,11 @@ class SucursalController
         }
     }
 
-    public function eliminar($id, $usuarioLogueado)
+    // Eliminamos $usuarioLogueado
+    public function eliminar($id)
     {
         try {
-            $this->sucursalService->eliminarSucursal($id, $usuarioLogueado);
+            $this->sucursalService->eliminarSucursal($id);
             
             ApiResponse::exito("Sucursal desactivada correctamente.");
         } catch (\Exception $e) {

@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Interfaces\Sucursal\SucursalServiceInterface;
 use App\Interfaces\Sucursal\SucursalRepositoryInterface;
 use App\Entities\Sucursal;
-use App\Constans\Roles;
+use App\Constans\Estados;
 use Exception;
 
 class SucursalService implements SucursalServiceInterface
@@ -17,41 +17,35 @@ class SucursalService implements SucursalServiceInterface
         $this->sucursalRepository = $sucursalRepository;
     }
 
-    private function verificarPermisoAdmin($usuario)
-    {
-        if ($usuario->rol_id !== Roles::ADMIN) {
-            throw new Exception("Acceso denegado. Solo administradores.");
-        }
-    }
+    // Se eliminó verificarPermisoAdmin (Responsabilidad del Middleware)
 
     public function listarSucursales()
     {
-        // Podríamos filtrar aquí si quisiéramos, pero el repo ya lo hace
         return $this->sucursalRepository->listar();
     }
 
-    public function crearSucursal(array $datos, $usuarioLogueado)
+    // Eliminado parámetro $usuarioLogueado
+    public function crearSucursal(array $datos)
     {
-        $this->verificarPermisoAdmin($usuarioLogueado);
-
         $sucursal = new Sucursal();
         $sucursal->sucursal_nombre = $datos['sucursal_nombre'];
         $sucursal->sucursal_direccion = $datos['sucursal_direccion'];
-        // El estado se maneja en el repositorio (por defecto 1)
+        
+        // Asignamos estado por defecto (Activo) usando constante
+        $sucursal->sucursal_estado = Estados::ACTIVO;
 
         return $this->sucursalRepository->crear($sucursal);
     }
 
-    public function editarSucursal($id, array $datos, $usuarioLogueado)
+    // Eliminado parámetro $usuarioLogueado
+    public function editarSucursal($id, array $datos)
     {
-        $this->verificarPermisoAdmin($usuarioLogueado);
-
         $sucursal = $this->sucursalRepository->obtenerPorId($id);
+        
         if (!$sucursal) {
             throw new Exception("La sucursal no existe.");
         }
 
-        // Actualizamos solo lo que viene
         if (!empty($datos['sucursal_nombre'])) {
             $sucursal->sucursal_nombre = $datos['sucursal_nombre'];
         }
@@ -59,7 +53,7 @@ class SucursalService implements SucursalServiceInterface
             $sucursal->sucursal_direccion = $datos['sucursal_direccion'];
         }
         
-        // Permitir reactivar o desactivar manualmente si se envía el estado
+        // Actualización de estado (usando constantes para validación si se quisiera)
         if (isset($datos['sucursal_estado'])) {
             $sucursal->sucursal_estado = $datos['sucursal_estado'];
         }
@@ -67,11 +61,11 @@ class SucursalService implements SucursalServiceInterface
         return $this->sucursalRepository->actualizar($sucursal);
     }
 
-    public function eliminarSucursal($id, $usuarioLogueado)
+    // Eliminado parámetro $usuarioLogueado
+    public function eliminarSucursal($id)
     {
-        $this->verificarPermisoAdmin($usuarioLogueado);
-
         $sucursal = $this->sucursalRepository->obtenerPorId($id);
+        
         if (!$sucursal) {
             throw new Exception("La sucursal no existe.");
         }

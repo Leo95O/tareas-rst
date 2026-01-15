@@ -5,7 +5,7 @@ namespace App\Interfaces\Sucursal;
 interface SucursalServiceInterface
 {
     public function listarSucursales();
-    public function crearSucursal(array $datos, $usuarioLogueado);
-    public function editarSucursal($id, array $datos, $usuarioLogueado);
-    public function eliminarSucursal($id, $usuarioLogueado);
+    public function crearSucursal(array $datos); // Sin $usuario
+    public function editarSucursal($id, array $datos); // Sin $usuario
+    public function eliminarSucursal($id); // Sin $usuario
 }
