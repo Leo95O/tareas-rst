@@ -5,6 +5,8 @@ namespace App\Controllers;
 use App\Interfaces\Sucursal\SucursalServiceInterface;
 use App\Utils\ApiResponse;
 use App\Validators\SucursalValidator;
+use App\Exceptions\ValidationException;
+use Exception;
 
 class SucursalController
 {
@@ -25,12 +27,14 @@ class SucursalController
             }, $lista);
 
             ApiResponse::exito("Listado de sucursales.", $data);
-        } catch (\Exception $e) {
+        } catch (ValidationException $e) {
             ApiResponse::alerta($e->getMessage());
+        } catch (Exception $e) {
+            error_log("Error en SucursalController::listar: " . $e->getMessage());
+            ApiResponse::error("Ocurrió un error al obtener el listado de sucursales.");
         }
     }
 
-    // Eliminamos $usuarioLogueado
     public function crear($datos)
     {
         try {
@@ -39,34 +43,51 @@ class SucursalController
             $id = $this->sucursalService->crearSucursal($datos);
             
             ApiResponse::exito("Sucursal creada correctamente.", ['id' => $id]);
-        } catch (\Exception $e) {
+        } catch (ValidationException $e) {
             ApiResponse::alerta($e->getMessage());
+        } catch (Exception $e) {
+            error_log("Error en SucursalController::crear: " . $e->getMessage());
+            ApiResponse::error("Ocurrió un error interno al intentar crear la sucursal.");
         }
     }
 
-    // Eliminamos $usuarioLogueado
     public function editar($id, $datos)
     {
         try {
-            if (empty($datos)) throw new \Exception("No se enviaron datos.");
+            if (empty($id)) {
+                throw new ValidationException("El ID de la sucursal es requerido.");
+            }
+
+            if (empty($datos)) {
+                throw new ValidationException("No se enviaron datos para actualizar.");
+            }
 
             $this->sucursalService->editarSucursal($id, $datos);
             
-            ApiResponse::exito("Sucursal actualizada.");
-        } catch (\Exception $e) {
+            ApiResponse::exito("Sucursal actualizada correctamente.");
+        } catch (ValidationException $e) {
             ApiResponse::alerta($e->getMessage());
+        } catch (Exception $e) {
+            error_log("Error en SucursalController::editar: " . $e->getMessage());
+            ApiResponse::error("Ocurrió un error inesperado al actualizar la sucursal.");
         }
     }
 
-    // Eliminamos $usuarioLogueado
     public function eliminar($id)
     {
         try {
+            if (empty($id)) {
+                throw new ValidationException("El ID es necesario para eliminar la sucursal.");
+            }
+
             $this->sucursalService->eliminarSucursal($id);
             
             ApiResponse::exito("Sucursal desactivada correctamente.");
-        } catch (\Exception $e) {
+        } catch (ValidationException $e) {
             ApiResponse::alerta($e->getMessage());
+        } catch (Exception $e) {
+            error_log("Error en SucursalController::eliminar: " . $e->getMessage());
+            ApiResponse::error("No se pudo completar la eliminación de la sucursal.");
         }
     }
 }

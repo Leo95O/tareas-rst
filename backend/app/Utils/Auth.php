@@ -8,36 +8,19 @@ class Auth
 {
     private static $secret_key;
     private static $encrypt = ['HS256'];
+// En Auth.php y Crypto.php, simplificar a:
+    private static function getSecretKey() {
+       if (!empty(self::$secret_key)) return self::$secret_key;
 
-    private static function getSecretKey()
-    {
-        if (!empty(self::$secret_key)) {
-            return self::$secret_key;
-        }
-
-        // Intentar obtener de variables de entorno
-        self::$secret_key = $_ENV['JWT_SECRET'] ?? $_SERVER['JWT_SECRET'] ?? getenv('JWT_SECRET') ?: '';
-
-        // Si no está disponible, leer directamente del archivo .env
-        if (empty(self::$secret_key)) {
-            $envFile = __DIR__ . '/../../.env';
-            if (file_exists($envFile)) {
-                $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-                foreach ($lines as $line) {
-                    if (strpos(trim($line), 'JWT_SECRET=') === 0) {
-                        self::$secret_key = trim(substr($line, 11));
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (empty(self::$secret_key)) {
-            throw new \Exception('JWT_SECRET no está configurada');
-        }
-
-        return self::$secret_key;
+    // Solo usar getenv o $_ENV
+    self::$secret_key = getenv('JWT_SECRET') ?: $_ENV['JWT_SECRET'] ?: '';
+    
+    if (empty(self::$secret_key)) {
+        throw new \Exception('Configuración faltante en el entorno.');
     }
+    return self::$secret_key;
+}
+
 
 public static function generarToken($usuario)
     {
@@ -64,9 +47,15 @@ public static function generarToken($usuario)
         return JWT::encode($payload, $secretKey);
     }
 
-    public static function verificarToken($token)
-    {
+    // En Auth.php
+public static function verificarToken($token) {
+    try {
         $secretKey = self::getSecretKey();
         return JWT::decode($token, $secretKey, self::$encrypt);
+    } catch (\Firebase\JWT\ExpiredException $e) {
+        throw new \Exception("El token ha expirado.");
+    } catch (\Exception $e) {
+        throw new \Exception("Token inválido o corrupto.");
     }
+}
 }

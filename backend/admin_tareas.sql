@@ -35,6 +35,15 @@ CREATE TABLE `intentos_acceso` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `intentos_acceso`
+--
+
+LOCK TABLES `intentos_acceso` WRITE;
+/*!40000 ALTER TABLE `intentos_acceso` DISABLE KEYS */;
+/*!40000 ALTER TABLE `intentos_acceso` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `proyecto_estados`
 --
 
@@ -48,6 +57,16 @@ CREATE TABLE `proyecto_estados` (
   PRIMARY KEY (`estado_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `proyecto_estados`
+--
+
+LOCK TABLES `proyecto_estados` WRITE;
+/*!40000 ALTER TABLE `proyecto_estados` DISABLE KEYS */;
+INSERT INTO `proyecto_estados` VALUES (1,'Activo',1),(2,'Pausado',2),(3,'Finalizado',3),(4,'Cancelado',4);
+/*!40000 ALTER TABLE `proyecto_estados` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `proyectos`
@@ -78,6 +97,16 @@ CREATE TABLE `proyectos` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `proyectos`
+--
+
+LOCK TABLES `proyectos` WRITE;
+/*!40000 ALTER TABLE `proyectos` DISABLE KEYS */;
+INSERT INTO `proyectos` VALUES (1,'Sistema ERP','Desarrollo del sistema integral',1,1,1,'2026-01-05',NULL,'2026-01-05 22:08:20',NULL),(2,'Microservicio','Agregar microservices',1,1,1,'2025-12-17','2025-11-11','2026-01-05 22:50:11',NULL),(3,'Optimización de BD','Mejoras para el rendimiento de la bd',1,1,1,'2026-01-12','2026-01-17','2026-01-13 10:26:52',NULL);
+/*!40000 ALTER TABLE `proyectos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `roles`
 --
 
@@ -92,6 +121,16 @@ CREATE TABLE `roles` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `roles`
+--
+
+LOCK TABLES `roles` WRITE;
+/*!40000 ALTER TABLE `roles` DISABLE KEYS */;
+INSERT INTO `roles` VALUES (1,'ADMIN'),(2,'PROJECT_MANAGER'),(3,'USER');
+/*!40000 ALTER TABLE `roles` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `sucursal_estados`
 --
 
@@ -104,6 +143,16 @@ CREATE TABLE `sucursal_estados` (
   PRIMARY KEY (`estado_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `sucursal_estados`
+--
+
+LOCK TABLES `sucursal_estados` WRITE;
+/*!40000 ALTER TABLE `sucursal_estados` DISABLE KEYS */;
+INSERT INTO `sucursal_estados` VALUES (1,'ACTIVO'),(2,'INACTIVO');
+/*!40000 ALTER TABLE `sucursal_estados` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `sucursales`
@@ -124,6 +173,16 @@ CREATE TABLE `sucursales` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `sucursales`
+--
+
+LOCK TABLES `sucursales` WRITE;
+/*!40000 ALTER TABLE `sucursales` DISABLE KEYS */;
+INSERT INTO `sucursales` VALUES (1,'Sucursal Central','Av. Principal #123',1),(2,'Sucursal Norte','Calle 45 Norte',1),(3,'Sucursal Cerrada','Local 5 - En remodelación',2);
+/*!40000 ALTER TABLE `sucursales` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `tarea_categorias`
 --
 
@@ -136,6 +195,16 @@ CREATE TABLE `tarea_categorias` (
   PRIMARY KEY (`categoria_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tarea_categorias`
+--
+
+LOCK TABLES `tarea_categorias` WRITE;
+/*!40000 ALTER TABLE `tarea_categorias` DISABLE KEYS */;
+INSERT INTO `tarea_categorias` VALUES (1,'Desarrollo'),(2,'Diseño'),(3,'Infraestructura'),(4,'Marketing'),(5,'Ventas');
+/*!40000 ALTER TABLE `tarea_categorias` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `tarea_estados`
@@ -153,6 +222,16 @@ CREATE TABLE `tarea_estados` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `tarea_estados`
+--
+
+LOCK TABLES `tarea_estados` WRITE;
+/*!40000 ALTER TABLE `tarea_estados` DISABLE KEYS */;
+INSERT INTO `tarea_estados` VALUES (1,'Pendiente',1),(2,'En Progreso',2),(3,'En Revisión',3),(4,'Completada',4);
+/*!40000 ALTER TABLE `tarea_estados` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `tarea_prioridades`
 --
 
@@ -166,6 +245,16 @@ CREATE TABLE `tarea_prioridades` (
   PRIMARY KEY (`prioridad_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tarea_prioridades`
+--
+
+LOCK TABLES `tarea_prioridades` WRITE;
+/*!40000 ALTER TABLE `tarea_prioridades` DISABLE KEYS */;
+INSERT INTO `tarea_prioridades` VALUES (1,'Baja',1),(2,'Media',2),(3,'Alta',3),(4,'Crítica',4);
+/*!40000 ALTER TABLE `tarea_prioridades` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `tareas`
@@ -203,6 +292,16 @@ CREATE TABLE `tareas` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `tareas`
+--
+
+LOCK TABLES `tareas` WRITE;
+/*!40000 ALTER TABLE `tareas` DISABLE KEYS */;
+INSERT INTO `tareas` VALUES (1,'Configurar Servidor','Instalar Linux y Docker','2024-12-31 23:59:59',4,1,1,3,3,2,'2026-01-05 22:49:01'),(2,'Hola','hpña ajaj','2026-01-05 23:17:38',3,4,1,NULL,2,1,NULL),(3,'hola','Implementa log en la conexión de impresoras antes del la inicialización ','2026-01-17 10:25:43',4,1,2,NULL,3,1,NULL),(4,'sssssss','sssssssssssssss','2026-01-23 09:52:42',4,2,3,NULL,NULL,1,NULL),(5,'hola','lknknknpkn','2026-01-23 11:52:53',4,1,2,NULL,4,1,NULL);
+/*!40000 ALTER TABLE `tareas` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `usuario_estados`
 --
 
@@ -216,6 +315,16 @@ CREATE TABLE `usuario_estados` (
   PRIMARY KEY (`estado_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `usuario_estados`
+--
+
+LOCK TABLES `usuario_estados` WRITE;
+/*!40000 ALTER TABLE `usuario_estados` DISABLE KEYS */;
+INSERT INTO `usuario_estados` VALUES (1,'ACTIVO','Usuario con acceso total al sistema'),(2,'INACTIVO','Usuario deshabilitado o eliminado lógicamente (Soft Delete)');
+/*!40000 ALTER TABLE `usuario_estados` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `usuarios`
@@ -243,6 +352,16 @@ CREATE TABLE `usuarios` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `usuarios`
+--
+
+LOCK TABLES `usuarios` WRITE;
+/*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
+INSERT INTO `usuarios` VALUES (1,'Super Admin','admin@test.com','$2y$12$.Y5cUcilrbXvIkdKGsphyeicTX047Pe2qLqUUZCztjX0PMGSbE7Le','eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3Njg1Njg3MzEsImV4cCI6MTc2ODY1NTEzMSwic3ViIjoxLCJkYXRhIjp7Im5vbWJyZSI6IlN1cGVyIEFkbWluIiwiY29ycmVvIjoiYWRtaW5AdGVzdC5jb20iLCJyb2wiOjF9fQ.Jf_88UF1h6BEjf-6-1qY7fi9nNMABIvaIMja8NX6lLw',1,1,'2026-01-05 22:08:20'),(2,'Gerente Proyecto','manager@test.com','$2y$12$.Y5cUcilrbXvIkdKGsphyeicTX047Pe2qLqUUZCztjX0PMGSbE7Le','eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjcmVhY2lvbiI6MTc2NzY3MTg4MCwiZXhwaXJhY2lvbiI6MTc2Nzc1ODI4MCwiZGF0YSI6eyJpZCI6Miwibm9tYnJlIjoiR2VyZW50ZSBQcm95ZWN0byIsImNvcnJlbyI6Im1hbmFnZXJAdGVzdC5jb20iLCJyb2wiOjJ9fQ.a6gBpyfyw01HH-ZXZYxHchFQHDvOBBZC8xXZJiKf4pk',2,1,'2026-01-05 22:08:20'),(3,'Empleado Dev','dev@test.com','$2y$12$.Y5cUcilrbXvIkdKGsphyeicTX047Pe2qLqUUZCztjX0PMGSbE7Le','eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjcmVhY2lvbiI6MTc2ODQ4NjI3OSwiZXhwaXJhY2lvbiI6MTc2ODU3MjY3OSwiZGF0YSI6eyJpZCI6Mywibm9tYnJlIjoiRW1wbGVhZG8gRGV2IiwiY29ycmVvIjoiZGV2QHRlc3QuY29tIiwicm9sIjozfX0.Dge9RCK-ZRkxtfosrUHoIpsFIm_EpqfYkvP_juPS_BQ',3,1,'2026-01-05 22:08:20'),(4,'HmuLs8j3U3D0ufQnDhVmR2gqeLF2eMhbThnJJ4VvXKk=','Joel@test.com','$2y$10$Uxu1JQRCv16OavAdf/Slz.5ZxcseMALY.T0/wFweJpk3iBG8oTtDq',NULL,1,1,'2026-01-15 11:43:36');
+/*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Dumping events for database 'admin_tareas'
 --
 
@@ -259,4 +378,4 @@ CREATE TABLE `usuarios` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-15 17:52:25
+-- Dump completed on 2026-01-16  9:18:36

@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Interfaces\DataMaster\DataMasterRepositoryInterface;
 use App\Utils\ApiResponse;
+use Exception;
 
 class DataMasterController
 {
@@ -23,12 +24,16 @@ class DataMasterController
                 'estados_sucursal'  => $this->repository->obtenerEstadosSucursal(),
                 'estados_proyecto'  => $this->repository->obtenerEstadosProyecto(),
                 'estados_tarea'     => $this->repository->obtenerEstadosTarea(),
-                'prioridades'       => $this->repository->obtenerPrioridades() // <--- AGREGAR ESTO
+                'prioridades'       => $this->repository->obtenerPrioridades()
             ];
 
-            ApiResponse::exito("Catálogos cargados", $data);
-        } catch (\Exception $e) {
-            ApiResponse::error("Error al cargar datos maestros: " . $e->getMessage());
+            ApiResponse::exito("Catálogos cargados correctamente.", $data);
+        } catch (Exception $e) {
+            // Registramos el error técnico para depuración interna
+            error_log("Error en DataMasterController::obtenerCatalogos: " . $e->getMessage());
+            
+            // Respuesta genérica al cliente por seguridad
+            ApiResponse::error("Ocurrió un error interno al intentar cargar los catálogos del sistema.");
         }
     }
 }

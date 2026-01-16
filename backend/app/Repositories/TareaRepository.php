@@ -55,7 +55,6 @@ class TareaRepository implements TareaRepositoryInterface
 
     public function listar($filtros = [])
     {
-        // Mega JOIN para traer datos ricos
         $sql = "SELECT t.*, 
                        te.estado_id as te_estado_id, te.estado_nombre as te_estado_nombre,
                        tp.prioridad_id as tp_prioridad_id, tp.prioridad_nombre as tp_prioridad_nombre, tp.prioridad_valor as tp_prioridad_valor,
@@ -66,7 +65,6 @@ class TareaRepository implements TareaRepositoryInterface
                 LEFT JOIN tarea_categorias tc ON t.categoria_id = tc.categoria_id
                 WHERE t.fecha_eliminacion IS NULL";
 
-        // Filtros dinámicos
         if (isset($filtros['proyecto_id'])) {
             $sql .= " AND t.proyecto_id = :proyecto_id";
         }
@@ -97,7 +95,6 @@ class TareaRepository implements TareaRepositoryInterface
 
     public function obtenerPorId($id)
     {
-        // Misma consulta base pero filtrada por ID
         $sql = "SELECT t.*, 
                        te.estado_id as te_estado_id, te.estado_nombre as te_estado_nombre,
                        tp.prioridad_id as tp_prioridad_id, tp.prioridad_nombre as tp_prioridad_nombre, tp.prioridad_valor as tp_prioridad_valor,
@@ -129,13 +126,11 @@ class TareaRepository implements TareaRepositoryInterface
         $stmt->bindParam(':estado', $tarea->estado_id);
         $stmt->bindParam(':proyecto', $tarea->proyecto_id);
         $stmt->bindParam(':categoria', $tarea->categoria_id);
-        $stmt->bindParam(':asignado', $tarea->usuario_asignado_id);
-        $stmt->bindParam(':creador', $tarea->usuario_creador_id);
+        $stmt->bindParam(':asignado', $tarea->usuario_asignado); // Corregido según Entity y DB
+        $stmt->bindParam(':creador', $tarea->usuario_creador);   // Corregido según Entity y DB
 
-        if ($stmt->execute()) {
-            return $this->conn->lastInsertId();
-        }
-        return false;
+        $stmt->execute();
+        return $this->conn->lastInsertId();
     }
 
     public function actualizar(Tarea $tarea)
@@ -157,7 +152,7 @@ class TareaRepository implements TareaRepositoryInterface
         $stmt->bindParam(':prioridad', $tarea->prioridad_id);
         $stmt->bindParam(':estado', $tarea->estado_id);
         $stmt->bindParam(':categoria', $tarea->categoria_id);
-        $stmt->bindParam(':asignado', $tarea->usuario_asignado_id);
+        $stmt->bindParam(':asignado', $tarea->usuario_asignado); // Corregido
         $stmt->bindParam(':id', $tarea->tarea_id);
 
         return $stmt->execute();
@@ -165,7 +160,6 @@ class TareaRepository implements TareaRepositoryInterface
 
     public function eliminar($id)
     {
-        // Soft Delete
         $sql = "UPDATE tareas SET fecha_eliminacion = NOW() WHERE tarea_id = :id";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':id', $id);

@@ -17,15 +17,13 @@ class SucursalRepository implements SucursalRepositoryInterface
         $this->conn = $connection;
     }
 
-    // Método privado para hidratar objetos (Evita repetir código en cada consulta)
     private function hidratar($fila)
     {
         $sucursal = new Sucursal($fila);
 
-        // Si la consulta trajo datos del JOIN con sucursal_estados
         if (!empty($fila['se_estado_nombre'])) {
             $estado = new EstadoSucursal([
-                'estado_id'     => $fila['se_estado_id'], // Usamos alias definidos en SQL
+                'estado_id'     => $fila['se_estado_id'],
                 'estado_nombre' => $fila['se_estado_nombre']
             ]);
             $sucursal->setEstado($estado);
@@ -36,7 +34,6 @@ class SucursalRepository implements SucursalRepositoryInterface
 
     public function listar()
     {
-        // JOIN con alias 'se' (Sucursal Estado)
         $sql = "SELECT s.*, 
                        se.estado_id as se_estado_id, 
                        se.estado_nombre as se_estado_nombre
@@ -80,18 +77,13 @@ class SucursalRepository implements SucursalRepositoryInterface
         $sql = "INSERT INTO sucursales (sucursal_nombre, sucursal_direccion, sucursal_estado) 
                 VALUES (:nombre, :direccion, :estado)";
         
-        // Usamos la constante ACTIVO por defecto
-        $estadoInicial = Estados::ACTIVO;
-
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':nombre', $sucursal->sucursal_nombre);
         $stmt->bindParam(':direccion', $sucursal->sucursal_direccion);
-        $stmt->bindParam(':estado', $estadoInicial);
+        $stmt->bindParam(':estado', $sucursal->sucursal_estado);
 
-        if ($stmt->execute()) {
-            return $this->conn->lastInsertId();
-        }
-        return false;
+        $stmt->execute();
+        return $this->conn->lastInsertId();
     }
 
     public function actualizar(Sucursal $sucursal)
@@ -113,10 +105,9 @@ class SucursalRepository implements SucursalRepositoryInterface
 
     public function eliminar($id)
     {
-        // SOFT DELETE: Usamos constante INACTIVO (2)
-        $estadoInactivo = Estados::INACTIVO;
-
         $sql = "UPDATE sucursales SET sucursal_estado = :estado WHERE sucursal_id = :id";
+        
+        $estadoInactivo = Estados::INACTIVO;
         
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':estado', $estadoInactivo);

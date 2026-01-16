@@ -3,8 +3,8 @@
 namespace App\Constants;
 
 class EstadosTarea {
-    const BACKLOG = 1;
-    const POR_HACER = 2; // O "To Do"
-    const EN_PROGRESO = 3;
-    const FINALIZADA = 4;
+    const PENDIENTE = 1;
+    const POR_HACERR = 2; // O "To Do"
+    const EN_REVISION = 3;
+    const COMPLETADA = 4;
 }

@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 use App\Interfaces\Proyecto\ProyectoServiceInterface;
 use App\Utils\ApiResponse;
+use App\Exceptions\ValidationException;
+use Exception;
 
 class ProyectoController
 {
@@ -14,7 +16,6 @@ class ProyectoController
         $this->proyectoService = $service;
     }
 
-    // Recibe filtros opcionales (ej: ['estado_id' => 1])
     public function listar($filtros = [])
     {
         try {
@@ -25,53 +26,78 @@ class ProyectoController
             }, $lista);
 
             ApiResponse::exito("Listado de proyectos.", $data);
-        } catch (\Exception $e) {
-            ApiResponse::error($e->getMessage());
+        } catch (ValidationException $e) {
+            ApiResponse::alerta($e->getMessage());
+        } catch (Exception $e) {
+            error_log("Error en ProyectoController::listar: " . $e->getMessage());
+            ApiResponse::error("Ocurrió un error al obtener el listado de proyectos.");
         }
     }
 
     public function obtenerPorId($id)
     {
         try {
+            if (empty($id)) {
+                throw new ValidationException("El ID del proyecto es obligatorio.");
+            }
+
             $proyecto = $this->proyectoService->obtenerProyectoPorId($id);
             ApiResponse::exito("Proyecto recuperado.", $proyecto->toArray());
-        } catch (\Exception $e) {
+        } catch (ValidationException $e) {
             ApiResponse::alerta($e->getMessage());
+        } catch (Exception $e) {
+            error_log("Error en ProyectoController::obtenerPorId: " . $e->getMessage());
+            ApiResponse::error("No se pudo recuperar el proyecto solicitado.");
         }
     }
 
-    // Recibe datos limpios y el ID del creador
     public function crear($datos, $creadorId)
     {
         try {
             $id = $this->proyectoService->crearProyecto($datos, $creadorId);
             
-            ApiResponse::exito("Proyecto creado.", ['id' => $id]);
-        } catch (\Exception $e) {
+            ApiResponse::exito("Proyecto creado correctamente.", ['id' => $id]);
+        } catch (ValidationException $e) {
             ApiResponse::alerta($e->getMessage());
+        } catch (Exception $e) {
+            error_log("Error en ProyectoController::crear: " . $e->getMessage());
+            ApiResponse::error("Error interno al intentar crear el proyecto.");
         }
     }
 
-    // Recibe ID y datos a editar
     public function editar($id, $datos)
     {
         try {
+            if (empty($id)) {
+                throw new ValidationException("El ID es necesario para editar el proyecto.");
+            }
+
             $this->proyectoService->editarProyecto($id, $datos);
             
-            ApiResponse::exito("Proyecto actualizado.");
-        } catch (\Exception $e) {
+            ApiResponse::exito("Proyecto actualizado correctamente.");
+        } catch (ValidationException $e) {
             ApiResponse::alerta($e->getMessage());
+        } catch (Exception $e) {
+            error_log("Error en ProyectoController::editar: " . $e->getMessage());
+            ApiResponse::error("Ocurrió un error inesperado al actualizar el proyecto.");
         }
     }
 
     public function eliminar($id)
     {
         try {
+            if (empty($id)) {
+                throw new ValidationException("ID no proporcionado para eliminación.");
+            }
+
             $this->proyectoService->eliminarProyecto($id);
             
-            ApiResponse::exito("Proyecto eliminado (Soft Delete).");
-        } catch (\Exception $e) {
+            ApiResponse::exito("Proyecto eliminado correctamente.");
+        } catch (ValidationException $e) {
             ApiResponse::alerta($e->getMessage());
+        } catch (Exception $e) {
+            error_log("Error en ProyectoController::eliminar: " . $e->getMessage());
+            ApiResponse::error("No se pudo completar la eliminación del proyecto.");
         }
     }
 }

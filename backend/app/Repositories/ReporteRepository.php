@@ -60,7 +60,7 @@ class ReporteRepository implements ReporteRepositoryInterface
     // 3. Tabla de Rendimiento de Proyectos
     public function obtenerRendimientoProyectos()
     {
-        $finalizada = EstadosTarea::FINALIZADA;
+        $finalizada = EstadosTarea::COMPLETADA;
 
         $sql = "SELECT 
                     p.proyecto_nombre,
@@ -93,7 +93,7 @@ class ReporteRepository implements ReporteRepositoryInterface
     public function obtenerCargaTrabajoUsuarios()
     {
         $activo = Estados::ACTIVO;
-        $finalizada = EstadosTarea::FINALIZADA;
+        $finalizada = EstadosTarea::COMPLETADA;
 
         $sql = "SELECT u.usuario_nombre, COUNT(t.tarea_id) as pendientes
                 FROM usuarios u
@@ -116,7 +116,7 @@ class ReporteRepository implements ReporteRepositoryInterface
     // 5. Alerta de Tareas Vencidas
     public function tareasVencidas()
     {
-        $finalizada = EstadosTarea::FINALIZADA;
+        $finalizada = EstadosTarea::COMPLETADA;
 
         $sql = "SELECT t.tarea_titulo, t.fecha_limite, u.usuario_nombre, p.proyecto_nombre
                 FROM tareas t

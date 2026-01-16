@@ -5,7 +5,8 @@ namespace App\Repositories;
 use App\Interfaces\Usuario\UsuarioRepositoryInterface;
 use App\Entities\Usuario;
 use App\Entities\Rol;
-use App\Entities\EstadoUsuario; // Importamos la Entidad, no la Constante
+use App\Entities\EstadoUsuario;
+use App\Constants\Estados;
 use PDO;
 
 class UsuarioRepository implements UsuarioRepositoryInterface
@@ -18,15 +19,13 @@ class UsuarioRepository implements UsuarioRepositoryInterface
     }
 
     /**
-     * Convierte una fila de base de datos en un Grafo de Objetos completo.
-     * (Usuario -> tiene Rol, Usuario -> tiene Estado)
+     * Convierte una fila de base de datos en un objeto Usuario hidratado.
      */
     private function hidratarUsuario($fila)
     {
-        // 1. Crear el objeto Usuario base
         $usuario = new Usuario($fila);
 
-        // 2. Hidratar ROL (si la consulta trajo datos de rol)
+        // Hidratación de ROL
         if (!empty($fila['rol_nombre'])) {
             $rol = new Rol([
                 'rol_id'     => $fila['rol_id'],
@@ -35,8 +34,7 @@ class UsuarioRepository implements UsuarioRepositoryInterface
             $usuario->setRol($rol);
         }
 
-        // 3. Hidratar ESTADO (si la consulta trajo datos de estado)
-        // Usamos los alias definidos en el SQL (ue_*) para evitar colisiones
+        // Hidratación de ESTADO
         if (!empty($fila['ue_estado_nombre'])) {
             $estado = new EstadoUsuario([
                 'estado_id'          => $fila['ue_estado_id'],
@@ -51,7 +49,6 @@ class UsuarioRepository implements UsuarioRepositoryInterface
 
     public function obtenerPorCorreo($correo)
     {
-        // JOIN DOBLE: Traemos datos de Roles y Estados en una sola consulta
         $sql = "SELECT u.*, 
                        r.rol_nombre, 
                        ue.estado_id as ue_estado_id, 
@@ -67,7 +64,6 @@ class UsuarioRepository implements UsuarioRepositoryInterface
         $stmt->execute();
 
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
-
         return $data ? $this->hidratarUsuario($data) : null;
     }
 
@@ -93,7 +89,6 @@ class UsuarioRepository implements UsuarioRepositoryInterface
 
     public function obtenerParaEditar($id)
     {
-        // Para editar, a veces basta con los datos planos, pero por consistencia usamos la hidratación completa
         return $this->obtenerPorId($id);
     }
 
@@ -131,9 +126,6 @@ class UsuarioRepository implements UsuarioRepositoryInterface
         return $usuarios;
     }
 
-    // --- Métodos de Escritura (INSERT/UPDATE/DELETE) ---
-    // Estos no requieren hidratación compleja, solo ejecutan SQL
-
     public function crearUsuario(Usuario $usuario)
     {
         $sql = "INSERT INTO usuarios 
@@ -142,19 +134,14 @@ class UsuarioRepository implements UsuarioRepositoryInterface
                 (:nombre, :correo, :password, :rol, :estado, NOW())";
 
         $stmt = $this->conn->prepare($sql);
-
         $stmt->bindParam(':nombre', $usuario->usuario_nombre);
         $stmt->bindParam(':correo', $usuario->usuario_correo);
         $stmt->bindParam(':password', $usuario->usuario_password);
         $stmt->bindParam(':rol', $usuario->rol_id);
-        
-        // Aquí insertamos el ID del estado (entero)
         $stmt->bindParam(':estado', $usuario->usuario_estado); 
 
-        if ($stmt->execute()) {
-            return $this->conn->lastInsertId();
-        }
-        return false;
+        $stmt->execute();
+        return $this->conn->lastInsertId();
     }
 
     public function actualizar(Usuario $usuario)
@@ -167,7 +154,6 @@ class UsuarioRepository implements UsuarioRepositoryInterface
                 WHERE usuario_id = :id";
 
         $stmt = $this->conn->prepare($sql);
-
         $stmt->bindParam(':nombre', $usuario->usuario_nombre);
         $stmt->bindParam(':correo', $usuario->usuario_correo);
         $stmt->bindParam(':rol', $usuario->rol_id);
@@ -179,10 +165,12 @@ class UsuarioRepository implements UsuarioRepositoryInterface
 
     public function eliminar($id)
     {
-        // Soft Delete: Pasamos a estado INACTIVO (ID 2 según tu DB)
-        $sql = "UPDATE usuarios SET usuario_estado = 2 WHERE usuario_id = :id";
+        $sql = "UPDATE usuarios SET usuario_estado = :estado WHERE usuario_id = :id";
+        
+        $estadoInactivo = Estados::INACTIVO;
         
         $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':estado', $estadoInactivo);
         $stmt->bindParam(':id', $id);
         
         return $stmt->execute();
