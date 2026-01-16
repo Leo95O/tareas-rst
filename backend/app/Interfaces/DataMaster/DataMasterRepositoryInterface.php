@@ -38,4 +38,5 @@ interface DataMasterRepositoryInterface
      * @return array
      */
     public function obtenerEstadosTarea();
+    public function obtenerPrioridades();
 }

@@ -17,16 +17,16 @@ class DataMasterController
     public function obtenerCatalogos()
     {
         try {
-            // Empaquetamos TODOS los catálogos necesarios para la APP
             $data = [
                 'roles'             => $this->repository->obtenerRoles(),
-                'estados_usuario'   => $this->repository->obtenerEstadosUsuario(),  // ¡Nuevo!
-                'estados_sucursal'  => $this->repository->obtenerEstadosSucursal(), // ¡Nuevo!
+                'estados_usuario'   => $this->repository->obtenerEstadosUsuario(),
+                'estados_sucursal'  => $this->repository->obtenerEstadosSucursal(),
                 'estados_proyecto'  => $this->repository->obtenerEstadosProyecto(),
-                'estados_tarea'     => $this->repository->obtenerEstadosTarea()
+                'estados_tarea'     => $this->repository->obtenerEstadosTarea(),
+                'prioridades'       => $this->repository->obtenerPrioridades() // <--- AGREGAR ESTO
             ];
 
-            ApiResponse::exito("Catálogos del sistema cargados correctamente.", $data);
+            ApiResponse::exito("Catálogos cargados", $data);
         } catch (\Exception $e) {
             ApiResponse::error("Error al cargar datos maestros: " . $e->getMessage());
         }

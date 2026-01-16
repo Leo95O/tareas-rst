@@ -59,4 +59,13 @@ class DataMasterRepository implements DataMasterRepositoryInterface
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    public function obtenerPrioridades()
+    {
+        // Asumiendo que la tabla se llama 'tarea_prioridades' o 'prioridades'
+        // Ajusta el nombre de la tabla si es necesario según tu BD
+        $sql = "SELECT prioridad_id as id, prioridad_nombre as nombre, prioridad_valor as valor FROM tarea_prioridades ORDER BY prioridad_valor DESC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

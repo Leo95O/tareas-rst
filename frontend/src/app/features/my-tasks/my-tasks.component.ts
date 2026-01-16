@@ -4,11 +4,13 @@ import { AuthService } from '../../core/services/auth.service';
 import { TaskService } from '../../core/services/task.service';
 import { UserService } from '../../core/services/user.service';
 import { ProjectService } from '../../core/services/project.service';
+import { DataMasterService } from '../../core/services/data-master.service';
 import { Task } from '../../core/interfaces/task.interface';
 
-/*
+/**
  * MyTasksComponent - Vista de tareas asignadas al usuario actual
-*/
+ * Refactorizado para usar DataMaster y Objetos Hidratados
+ */
 @Component({
   standalone: false,
   selector: 'app-my-tasks',
@@ -20,162 +22,143 @@ export class MyTasksComponent implements OnInit {
   private readonly taskService = inject(TaskService);
   private readonly userService = inject(UserService);
   private readonly projectService = inject(ProjectService);
+  private readonly dataMaster = inject(DataMasterService);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  // Signals desde los servicios
+  // Signals base
   readonly currentUser = this.authService.currentUser;
   readonly tasksLoading = this.taskService.isLoading;
 
-  // Filtrar solo tareas del usuario actual y agrupar por estado
+  // Catálogos (FUENTE ÚNICA)
+  readonly proyectos = this.projectService.projects;
+  readonly estados = this.dataMaster.estadosTarea;
+  readonly prioridades = this.dataMaster.prioridades;
+  readonly usuarios = this.userService.users;
+
+  // ---------------------------
+  // TAREAS AGRUPADAS POR ESTADO
+  // ---------------------------
   readonly myTasksByEstado = computed(() => {
     const userId = this.currentUser()?.usuario_id;
     if (!userId) return [];
 
     const allTasks = this.taskService.tasks();
-    const estados = this.taskService.estados();
+    const estadosDisponibles = this.estados();
 
-    if (!estados.length) return [];
+    if (!estadosDisponibles.length) return [];
 
-    // Filtrar solo tareas del usuario actual
-    const myTasks = allTasks.filter(task => task.usuario_asignado_id === userId);
+    // Filtrar solo tareas asignadas al usuario actual
+    // CORRECCIÓN: Se verifica tanto asignado_id como usuario_asignado_id por compatibilidad
+    const myTasks = allTasks.filter(task => 
+      (task.asignado_id ?? task.usuario_asignado_id) === userId
+    );
 
-    // Crear columnas para cada estado
-    const estadosMap = new Map<number, { estado: { estado_id: number; nombre: string; color: string; orden: number }; tasks: Task[] }>();
+    const estadosMap = new Map<number, { estado: any; tasks: Task[] }>();
 
-    estados.forEach((estado) => {
+    // Inicializar columnas de estados
+    estadosDisponibles.forEach(estado => {
       estadosMap.set(estado.id, {
-        estado: {
-          estado_id: estado.id,
-          nombre: estado.nombre,
-          color: estado.color || '#6B7280',
-          orden: estado.orden || estado.id,
-        },
+        estado,
         tasks: [],
       });
     });
 
-    // Agregar tareas a sus columnas
-    myTasks.forEach((task) => {
-      const estadoId = (task as any).estado_id;
-      if (estadosMap.has(estadoId)) {
+    // Repartir tareas
+    myTasks.forEach(task => {
+      const estadoId = task.estado?.id ?? task.estado_id;
+      if (estadoId !== undefined && estadosMap.has(estadoId)) {
         estadosMap.get(estadoId)!.tasks.push(task);
       }
     });
 
-    // Convertir a array, ordenar, y filtrar columnas vacías
+    // Retornar solo columnas que tengan tareas, ordenadas
     return Array.from(estadosMap.values())
-      .sort((a, b) => a.estado.orden - b.estado.orden)
-      .filter(column => column.tasks.length > 0);
+      .sort((a, b) => (a.estado.orden ?? 0) - (b.estado.orden ?? 0))
+      .filter(col => col.tasks.length > 0);
   });
 
-  // Estadísticas personales
+  // ---------------------------
+  // ESTADÍSTICAS PERSONALES
+  // ---------------------------
   readonly totalMyTasks = computed(() => {
     const userId = this.currentUser()?.usuario_id;
-    if (!userId) return 0;
-
-    return this.taskService.tasks().filter(
-      task => task.usuario_asignado_id === userId
+    return this.taskService.tasks().filter(t => 
+      (t.asignado_id ?? t.usuario_asignado_id) === userId
     ).length;
   });
 
   readonly completedTasks = computed(() => {
     const userId = this.currentUser()?.usuario_id;
-    if (!userId) return 0;
-
-    return this.taskService.tasks().filter(task => {
-      const estadoNombre = (task as any).estado || '';
-      return task.usuario_asignado_id === userId &&
-        estadoNombre.toLowerCase() === 'completada';
-    }).length;
+    return this.taskService.tasks().filter(t =>
+      (t.asignado_id ?? t.usuario_asignado_id) === userId &&
+      (t.estado?.nombre || '').toLowerCase().includes('completada')
+    ).length;
   });
 
   readonly pendingTasks = computed(() => {
     const userId = this.currentUser()?.usuario_id;
-    if (!userId) return 0;
-
-    const estadosFinalizados = ['completada', 'cancelada'];
-    return this.taskService.tasks().filter(task => {
-      const estadoNombre = (task as any).estado || '';
-      return task.usuario_asignado_id === userId &&
-        !estadosFinalizados.includes(estadoNombre.toLowerCase());
-    }).length;
+    const finalizados = ['completada', 'cancelada', 'finalizada'];
+    return this.taskService.tasks().filter(t =>
+      (t.asignado_id ?? t.usuario_asignado_id) === userId &&
+      !finalizados.includes((t.estado?.nombre || '').toLowerCase())
+    ).length;
   });
 
   readonly overdueTasks = computed(() => {
     const userId = this.currentUser()?.usuario_id;
-    if (!userId) return 0;
-
-    // Usar campo es_vencida calculado por el backend
-    return this.taskService.tasks().filter(
-      task => task.usuario_asignado_id === userId && task.es_vencida === 1
+    return this.taskService.tasks().filter(t =>
+      (t.asignado_id ?? t.usuario_asignado_id) === userId && t.es_vencida === 1
     ).length;
   });
 
-  // Modal state
-  readonly modalVisible = signal<boolean>(false);
+  // ---------------------------
+  // MODALES
+  // ---------------------------
+  readonly modalVisible = signal(false);
   readonly selectedTask = signal<Task | null>(null);
 
-  // Modal de detalle
-  readonly detailModalVisible = signal<boolean>(false);
+  readonly detailModalVisible = signal(false);
   readonly selectedTaskForDetail = signal<Task | null>(null);
-
-  // Catálogos
-  readonly proyectos = this.projectService.projects;
-  readonly estados = this.taskService.estados;
-  readonly prioridades = this.taskService.prioridades;
-  readonly usuarios = this.userService.users;
 
   ngOnInit(): void {
     this.loadData();
   }
 
-  /**
-   * Cargar datos iniciales
-   */
   private loadData(): void {
-    this.taskService.getTasks();
-    this.projectService.getProjects();
-    this.taskService.getEstados();
-    this.taskService.getPrioridades();
+    // Carga unificada de catálogos y tareas
+    this.dataMaster.loadAll().subscribe(() => {
+      this.taskService.getTasks();
+    });
 
-    // Solo cargar usuarios si es Admin o PM (no para usuarios normales)
-    const userRolId = this.currentUser()?.rol_id;
-    if (userRolId === 1 || userRolId === 2) {
+    this.projectService.getProjects();
+
+    const rol = this.currentUser()?.rol_id;
+    if (rol === 1 || rol === 2) {
       this.userService.getUsers();
     }
   }
 
-  /**
-   * Abrir modal para crear tarea
-   */
+  // ---------------------------
+  // ACCIONES
+  // ---------------------------
   openCreateTaskModal(): void {
     this.selectedTask.set(null);
     this.modalVisible.set(true);
   }
 
-  /**
-   * Abrir modal para editar tarea
-   */
   openEditTaskModal(task: Task): void {
     this.selectedTask.set(task);
     this.modalVisible.set(true);
   }
 
-  /**
-   * Abrir modal de detalle de tarea
-   */
   openDetailModal(task: Task): void {
     this.selectedTaskForDetail.set(task);
     this.detailModalVisible.set(true);
   }
 
-  /**
-   * Manejar guardado de tarea (create o update)
-   */
   handleSaveTask(taskData: any): void {
     const isUpdate = !!this.selectedTask();
-
     const request$ = isUpdate
       ? this.taskService.updateTask(this.selectedTask()!.id, taskData)
       : this.taskService.createTask(taskData);
@@ -190,16 +173,7 @@ export class MyTasksComponent implements OnInit {
             life: 3000,
           });
           this.modalVisible.set(false);
-          this.selectedTask.set(null);
-          // Recargar tareas para actualizar la vista
-          this.loadData();
-        } else {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: response.mensajes?.[0] || 'Error al guardar la tarea',
-            life: 5000,
-          });
+          this.taskService.getTasks(); // Recargar datos
         }
       },
       error: (error) => {
@@ -209,60 +183,31 @@ export class MyTasksComponent implements OnInit {
           detail: error.error?.mensajes?.[0] || 'Error de conexión',
           life: 5000,
         });
-      },
+      }
     });
   }
 
-  /**
-   * Manejar eliminación de tarea
-   */
   handleDeleteTask(taskId: number): void {
     this.confirmationService.confirm({
-      message: '¿Estás seguro de eliminar esta tarea? Esta acción no se puede deshacer.',
-      header: 'Confirmar Eliminación',
+      message: '¿Estás seguro de eliminar esta tarea?',
+      header: 'Confirmar eliminación',
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Sí, eliminar',
-      rejectLabel: 'Cancelar',
+      acceptLabel: 'Eliminar',
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
-        this.taskService.deleteTask(taskId).subscribe({
-          next: (response) => {
-            if (response.tipo === 1 || response.tipo === 1000) {
-              this.messageService.add({
-                severity: 'success',
-                summary: 'Éxito',
-                detail: response.mensajes?.[0] || 'Tarea eliminada correctamente',
-                life: 3000,
-              });
-              this.modalVisible.set(false);
-              this.selectedTask.set(null);
-              // Recargar tareas para actualizar la vista
-              this.loadData();
-            } else {
-              this.messageService.add({
-                severity: 'error',
-                summary: 'Error',
-                detail: response.mensajes?.[0] || 'Error al eliminar la tarea',
-                life: 5000,
-              });
-            }
-          },
-          error: (error) => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: error.error?.mensajes?.[0] || 'Error de conexión',
-              life: 5000,
-            });
-          },
+        this.taskService.deleteTask(taskId).subscribe(() => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Eliminado',
+            detail: 'Tarea eliminada correctamente',
+            life: 3000,
+          });
+          this.taskService.getTasks();
         });
-      },
+      }
     });
   }
 
-  /**
-   * Cerrar modal
-   */
   handleCancelModal(): void {
     this.modalVisible.set(false);
     this.selectedTask.set(null);

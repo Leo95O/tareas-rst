@@ -3,7 +3,7 @@ import { Task } from '../../../core/interfaces/task.interface';
 
 /**
  * TaskCardComponent - Componente reutilizable para mostrar tarjetas de tareas
- * Usado en vistas Kanban, Dashboard, y listas de tareas
+ * Corregido para manejar Objetos Hidratados (Plantilla Dorada)
  */
 @Component({
   standalone: false,
@@ -34,7 +34,8 @@ export class TaskCardComponent {
    * Obtener color hexadecimal del badge de prioridad basado en el nombre
    */
   getPriorityColor(): string {
-    const prioridad = (this.task.prioridad || '').toLowerCase();
+    // CORRECCIÓN: Accedemos a ?.nombre porque prioridad ahora es un objeto
+    const prioridad = (this.task.prioridad?.nombre || '').toLowerCase();
 
     if (prioridad.includes('crítica')) {
       return '#991B1B'; // red-800
@@ -55,7 +56,8 @@ export class TaskCardComponent {
    * Obtener icono de prioridad
    */
   getPriorityIcon(): string {
-    const prioridad = (this.task.prioridad || '').toLowerCase();
+    // CORRECCIÓN: Acceso seguro al nombre del objeto
+    const prioridad = (this.task.prioridad?.nombre || '').toLowerCase();
 
     if (prioridad.includes('crítica')) {
       return 'pi-exclamation-triangle';
@@ -73,7 +75,8 @@ export class TaskCardComponent {
    * Obtener clases CSS para el badge del estado
    */
   getEstadoBadgeClasses(): string {
-    const estado = (this.task.estado || '').toLowerCase();
+    // CORRECCIÓN: Acceso seguro al nombre del objeto
+    const estado = (this.task.estado?.nombre || '').toLowerCase();
 
     if (estado.includes('pendiente')) {
       return 'bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700';
@@ -103,12 +106,8 @@ export class TaskCardComponent {
 
   /**
    * Formatear fecha de vencimiento de forma descriptiva
-   * - Más de 1 día: "Vence en X días"
-   * - Más de 1 hora: "Vence en X horas"
-   * - Menos de 1 hora: "Vence en HH:MM:SS" (cuenta regresiva)
-   * - Ya pasó: "Venció hace X días/horas"
    */
-  formatDate(dateString: string | null): string {
+  formatDate(dateString: string | null | undefined): string { // Agregado undefined por seguridad
     if (!dateString) return '';
 
     const date = new Date(dateString);
@@ -119,7 +118,6 @@ export class TaskCardComponent {
     // Calcular diferencias
     const diffDays = Math.floor(diffAbsMs / (1000 * 60 * 60 * 24));
     const diffHours = Math.floor(diffAbsMs / (1000 * 60 * 60));
-    const diffMinutes = Math.floor(diffAbsMs / (1000 * 60));
 
     // Si ya venció (fecha en el pasado)
     if (diffMs < 0) {

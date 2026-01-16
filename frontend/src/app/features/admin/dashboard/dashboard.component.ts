@@ -3,9 +3,10 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { AdminService } from '../../../core/services/admin.service';
 import { TaskService } from '../../../core/services/task.service';
 import { UserService } from '../../../core/services/user.service';
-import { Task } from '../../../core/interfaces/task.interface';
 import { ProjectService } from '../../../core/services/project.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
+import { DataMasterService } from '../../../core/services/data-master.service'; // <--- 1. Importar
+import { Task } from '../../../core/interfaces/task.interface';
 import { DashboardReport } from '../../../core/interfaces/report.interface';
 
 @Component({
@@ -20,6 +21,7 @@ export class DashboardComponent implements OnInit {
   private readonly userService = inject(UserService);
   private readonly projectService = inject(ProjectService);
   private readonly dashboardService = inject(DashboardService);
+  private readonly dataMaster = inject(DataMasterService); // <--- 2. Inyectar
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
 
@@ -40,10 +42,10 @@ export class DashboardComponent implements OnInit {
   detailModalVisible = signal<boolean>(false);
   selectedTaskForDetail = signal<Task | null>(null);
 
-  // Catálogos para el modal
+  // Catálogos para el modal (Usando DataMaster)
   readonly proyectos = this.projectService.projects;
-  readonly estados = this.taskService.estados;
-  readonly prioridades = this.taskService.prioridades;
+  readonly estados = this.dataMaster.estadosTarea; // <--- 3. Usar DataMaster
+  readonly prioridades = this.dataMaster.prioridades; // <--- 3. Usar DataMaster
   readonly usuarios = this.userService.users;
 
   // Computed signals para estadísticas 
@@ -87,9 +89,9 @@ export class DashboardComponent implements OnInit {
    */
   private loadCatalogos(): void {
     this.projectService.getProjects();
-    this.taskService.getEstados();
-    this.taskService.getPrioridades();
     this.userService.getUsers();
+    // 4. Cargar catálogos centralizados (estados, prioridades, etc.)
+    this.dataMaster.loadAll().subscribe(); 
   }
 
   /**
@@ -281,20 +283,24 @@ export class DashboardComponent implements OnInit {
 
     if (!this.draggedTask) return;
 
-    // Si el estado es el mismo, no hacer nada
-    if (this.draggedTask.estado_id === nuevoEstadoId) {
+    // Verificar si el estado cambió comparando con el ID del objeto o el plano
+    const currentEstadoId = this.draggedTask.estado?.id ?? this.draggedTask.estado_id;
+
+    if (currentEstadoId === nuevoEstadoId) {
       this.draggedTask = null;
       return;
     }
 
-    // Actualizar la tarea con el nuevo estado
+    // 5. CORRECCIÓN: Construir DTO extrayendo IDs seguros
     const taskData = {
       titulo: this.draggedTask.titulo,
       descripcion: this.draggedTask.descripcion,
       proyecto_id: this.draggedTask.proyecto_id,
-      prioridad_id: this.draggedTask.prioridad_id,
+      // Extraemos ID de prioridad (objeto) o usamos el plano
+      prioridad_id: this.draggedTask.prioridad?.id ?? this.draggedTask.prioridad_id,
       estado_id: nuevoEstadoId,
-      usuario_asignado: this.draggedTask.usuario_asignado_id,
+      // Mapeamos 'asignado_id' (interfaz nueva) a 'usuario_asignado_id' (DTO backend)
+      usuario_asignado_id: this.draggedTask.asignado_id ?? this.draggedTask.usuario_asignado_id,
       fecha_limite: this.draggedTask.fecha_limite,
     };
 
@@ -316,8 +322,7 @@ export class DashboardComponent implements OnInit {
           detail: 'No se pudo mover la tarea',
           life: 3000,
         });
-        // Recargar tareas para revertir el cambio visual
-        this.loadTasks();
+        this.loadTasks(); // Revertir visualmente
       },
     });
 
