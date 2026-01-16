@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Interfaces\LoginGuard\LoginGuardServiceInterface;
 use App\Interfaces\LoginGuard\LoginGuardRepositoryInterface;
-use Exception;
+use App\Exceptions\ValidationException;
 use DateTime;
 
 class LoginGuardService implements LoginGuardServiceInterface
@@ -16,25 +16,28 @@ class LoginGuardService implements LoginGuardServiceInterface
         $this->repository = $repo;
     }
 
-    // Verifica si el usuario tiene permitido intentar iniciar sesión
-    public function verificarSiPuedeEntrar($correo)
+    public function verificarSiPuedeEntrar($usuarioHash)
     {
-        $estado = $this->repository->obtenerEstado($correo);
+        $estado = $this->repository->obtenerEstado($usuarioHash);
 
         if ($estado) {
-            // Comprueba si existe un bloqueo permanente
-            if ($estado['nivel_bloqueo'] >= 3) {
-                throw new Exception("Tu cuenta ha sido bloqueada permanentemente. Contacta al soporte.");
+            // 1. Bloqueo Permanente (Nivel 3 o superior)
+            if ((int)$estado['nivel_bloqueo'] >= 3) {
+                throw new ValidationException("Esta cuenta ha sido bloqueada permanentemente por seguridad. Contacte al administrador.");
             }
 
-            // Comprueba si existe un bloqueo temporal activo
+            // 2. Bloqueo Temporal activo
             if (!empty($estado['bloqueado_hasta'])) {
                 $ahora = new DateTime();
                 $hasta = new DateTime($estado['bloqueado_hasta']);
 
                 if ($ahora < $hasta) {
                     $diff = $hasta->diff($ahora);
-                    throw new Exception("Cuenta bloqueada temporalmente. Espera {$diff->i} min y {$diff->s} seg.");
+                    $tiempo = "";
+                    if ($diff->i > 0) $tiempo .= "{$diff->i} min ";
+                    $tiempo .= "{$diff->s} seg";
+                    
+                    throw new ValidationException("Demasiados intentos fallidos. Por seguridad, intente nuevamente en: {$tiempo}.");
                 }
             }
         }
@@ -42,8 +45,7 @@ class LoginGuardService implements LoginGuardServiceInterface
         return $estado;
     }
 
-    // Gestiona la lógica de acumulación de intentos fallidos y escalado de bloqueos
-    public function procesarIntentoFallido($correo, $estadoActual)
+    public function procesarIntentoFallido($usuarioHash, $estadoActual)
     {
         $ahora = new DateTime();
         $intentos = 0;
@@ -56,10 +58,10 @@ class LoginGuardService implements LoginGuardServiceInterface
             $ultimoIntento = $estadoActual['ultimo_intento'] ? new DateTime($estadoActual['ultimo_intento']) : null;
         }
 
-        // Si pasaron más de 2 minutos desde el último error, se reinicia el contador de intentos
+        // Si han pasado más de 15 minutos, reseteamos intentos pero mantenemos el nivel de sospecha
         if ($ultimoIntento) {
             $diffMinutos = ($ahora->getTimestamp() - $ultimoIntento->getTimestamp()) / 60;
-            if ($diffMinutos > 2) {
+            if ($diffMinutos > 15) {
                 $intentos = 0;
             }
         }
@@ -67,28 +69,29 @@ class LoginGuardService implements LoginGuardServiceInterface
         $intentos++;
         $bloqueadoHasta = null;
 
-        // Cada 3 intentos consecutivos aumenta la severidad del bloqueo
+        // Regla: 3 intentos fallidos activan/escalan un bloqueo
         if ($intentos >= 3) {
             $nivel++;
-            $intentos = 0;
+            $intentos = 0; // Reiniciamos contador de intentos para el siguiente nivel
 
             if ($nivel === 1) {
                 $ahora->modify('+5 minutes');
                 $bloqueadoHasta = $ahora->format('Y-m-d H:i:s');
             } elseif ($nivel === 2) {
-                $ahora->modify('+10 minutes');
+                $ahora->modify('+15 minutes');
                 $bloqueadoHasta = $ahora->format('Y-m-d H:i:s');
             } elseif ($nivel >= 3) {
-                $bloqueadoHasta = null; // null indica bloqueo permanente en la lógica de negocio
+                // El nivel 3 ya se considera permanente en verificarSiPuedeEntrar
+                $bloqueadoHasta = '2099-12-31 23:59:59'; 
             }
         }
 
-        $this->repository->registrarFallo($correo, $intentos, $nivel, $bloqueadoHasta);
+        // Llamada sincronizada con LoginGuardRepository
+        $this->repository->registrarIntento($usuarioHash, $intentos, $nivel, $bloqueadoHasta);
     }
 
-    // Elimina el historial de bloqueos tras un inicio de sesión exitoso
-    public function limpiarHistorial($correo)
+    public function limpiarHistorial($usuarioHash)
     {
-        $this->repository->limpiar($correo);
+        $this->repository->limpiarCuentas($usuarioHash);
     }
 }

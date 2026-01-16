@@ -4,9 +4,10 @@ namespace App\Interfaces\LoginGuard;
 
 interface LoginGuardRepositoryInterface
 {
-    public function obtenerEstado($correo);
-    
-    public function registrarFallo($correo, $intentos, $nivel, $bloqueadoHasta = null);
-    
-    public function limpiar($correo);
+
+    public function obtenerEstado($usuarioHash);
+
+    public function registrarIntento($usuarioHash, $intentos, $nivel, $bloqueadoHasta);
+
+    public function limpiarCuentas($usuarioHash);
 }

@@ -2,57 +2,59 @@
 
 namespace App\Repositories;
 
-// 1. Usar la Interfaz (ajusta el namespace si es diferente en tu estructura)
 use App\Interfaces\LoginGuard\LoginGuardRepositoryInterface;
 use PDO;
 
-// 2. Implementar la Interfaz
 class LoginGuardRepository implements LoginGuardRepositoryInterface
 {
     private $conn;
 
-    // 3. Inyección de Dependencias: Recibimos PDO
     public function __construct(PDO $connection)
     {
         $this->conn = $connection;
     }
 
-    public function obtenerEstado($correo)
+    public function obtenerEstado($usuarioHash)
     {
-        $sql = "SELECT * FROM intentos_acceso WHERE usuario_hash = :correo LIMIT 1";
+        $sql = "SELECT * FROM intentos_acceso WHERE usuario_hash = :hash LIMIT 1";
         $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':correo', $correo);
+        $stmt->bindParam(':hash', $usuarioHash);
         $stmt->execute();
+
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function registrarFallo($correo, $intentos, $nivel, $bloqueadoHasta = null)
+    public function registrarIntento($usuarioHash, $intentos, $nivel, $bloqueadoHasta)
     {
-        $sql = "INSERT INTO intentos_acceso (usuario_hash, intentos_fallidos, nivel_bloqueo, ultimo_intento, bloqueado_hasta) 
-                VALUES (:correo, :intentos, :nivel, NOW(), :hasta)
+        // Usamos ON DUPLICATE KEY para que la lógica sea atómica y eficiente
+        $sql = "INSERT INTO intentos_acceso 
+                (usuario_hash, intentos_fallidos, nivel_bloqueo, ultimo_intento, bloqueado_hasta)
+                VALUES (:hash, :intentos, :nivel, NOW(), :bloqueado)
                 ON DUPLICATE KEY UPDATE 
-                    intentos_fallidos = :intentos_u, 
-                    nivel_bloqueo = :nivel_u, 
-                    ultimo_intento = NOW(), 
-                    bloqueado_hasta = :hasta_u";
+                    intentos_fallidos = :intentos2,
+                    nivel_bloqueo = :nivel2,
+                    ultimo_intento = NOW(),
+                    bloqueado_hasta = :bloqueado2";
 
         $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':correo', $correo);
+        $stmt->bindParam(':hash', $usuarioHash);
         $stmt->bindParam(':intentos', $intentos);
         $stmt->bindParam(':nivel', $nivel);
-        $stmt->bindParam(':hasta', $bloqueadoHasta);
-        $stmt->bindParam(':intentos_u', $intentos);
-        $stmt->bindParam(':nivel_u', $nivel);
-        $stmt->bindParam(':hasta_u', $bloqueadoHasta);
+        $stmt->bindParam(':bloqueado', $bloqueadoHasta);
+        
+        // Parámetros para el UPDATE
+        $stmt->bindParam(':intentos2', $intentos);
+        $stmt->bindParam(':nivel2', $nivel);
+        $stmt->bindParam(':bloqueado2', $bloqueadoHasta);
 
-        return $stmt->execute();
+        $stmt->execute();
     }
 
-    public function limpiar($correo)
+    public function limpiarCuentas($usuarioHash)
     {
-        $sql = "DELETE FROM intentos_acceso WHERE usuario_hash = :correo";
+        $sql = "DELETE FROM intentos_acceso WHERE usuario_hash = :hash";
         $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':correo', $correo);
-        return $stmt->execute();
+        $stmt->bindParam(':hash', $usuarioHash);
+        $stmt->execute();
     }
 }
