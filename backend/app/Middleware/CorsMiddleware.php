@@ -3,7 +3,7 @@
 namespace App\Middleware;
 
 use \Slim\Middleware;
-class CorsMiddleware extends Middleware
+class CorsMiddleware
 {
     public function call()
     {

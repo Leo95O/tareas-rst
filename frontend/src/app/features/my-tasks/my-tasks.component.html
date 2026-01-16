@@ -142,14 +142,26 @@
 </div>
 
 <!-- Modal de Tarea -->
-<app-task-modal [(visible)]="modalVisible" [task]="selectedTask()" [proyectos]="proyectos()" [estados]="estados()"
-  [prioridades]="prioridades()" [usuarios]="usuarios()" [userRolId]="currentUser()?.rol_id || 3"
-  (onSave)="handleSaveTask($event)" (onCancel)="handleCancelModal()"
-  (onDelete)="handleDeleteTask($event)"></app-task-modal>
+<app-task-modal 
+  [visible]="modalVisible()" 
+  (visibleChange)="modalVisible.set(!!$event)"
+  [task]="selectedTask()" 
+  [proyectos]="proyectos()" 
+  [estados]="estados()"
+  [prioridades]="prioridades()" 
+  [usuarios]="usuarios()" 
+  [userRolId]="currentUser()?.rol_id || 3"
+  (onSave)="handleSaveTask($event)" 
+  (onCancel)="handleCancelModal()"
+  (onDelete)="handleDeleteTask($event)">
+</app-task-modal>
 
-<!-- Modal de Detalle de Tarea -->
-<app-task-detail-modal [(visible)]="detailModalVisible" [task]="selectedTaskForDetail()"
-  (onEdit)="openEditTaskModal($event); detailModalVisible.set(false)" (onClose)="detailModalVisible.set(false)">
+<app-task-detail-modal 
+  [visible]="detailModalVisible()" 
+  (visibleChange)="detailModalVisible.set(!!$event)"
+  [task]="selectedTaskForDetail()"
+  (onEdit)="openEditTaskModal($event); detailModalVisible.set(false)" 
+  (onClose)="detailModalVisible.set(false)">
 </app-task-detail-modal>
 
 <!-- Toast para notificaciones -->

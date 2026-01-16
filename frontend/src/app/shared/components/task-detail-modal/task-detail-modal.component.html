@@ -1,18 +1,18 @@
 <p-dialog [(visible)]="visible" [modal]="true" [draggable]="false" [resizable]="false" [closable]="true"
     header="Detalle de la Tarea" [style]="{ width: '700px', maxHeight: '90vh' }"
     [contentStyle]="{ 'overflow-y': 'auto', 'max-height': 'calc(90vh - 120px)' }" (onHide)="closeModal()">
+    
     @if (task) {
     <div class="space-y-6">
-        <!-- Header con título y badges -->
         <div class="border-b border-gray-200 pb-4">
             <h2 class="text-2xl font-bold text-gray-800 mb-3">{{ task.titulo }}</h2>
             <div class="flex flex-wrap gap-2">
                 <span class="px-3 py-1 text-sm font-medium rounded-full" [ngClass]="getEstadoClasses()">
-                    {{ task.estado }}
+                    {{ task.estado?.nombre || 'Sin estado' }}
                 </span>
                 <span class="px-3 py-1 text-sm font-medium rounded-full text-white"
                     [style.background-color]="getPriorityColor()">
-                    {{ task.prioridad }}
+                    {{ task.prioridad?.nombre || 'Sin prioridad' }}
                 </span>
                 @if (isOverdue()) {
                 <span class="px-3 py-1 text-sm font-medium rounded-full bg-red-100 text-red-700">
@@ -22,7 +22,6 @@
             </div>
         </div>
 
-        <!-- Descripción -->
         <div class="bg-gray-50 rounded-lg p-4">
             <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
                 <i class="pi pi-align-left mr-2"></i>Descripción
@@ -32,9 +31,7 @@
             </p>
         </div>
 
-        <!-- Grid de información -->
         <div class="grid grid-cols-2 gap-4">
-            <!-- Proyecto -->
             <div class="bg-purple-50 rounded-lg p-4">
                 <h3 class="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-1">
                     <i class="pi pi-folder mr-2"></i>Proyecto
@@ -42,7 +39,6 @@
                 <p class="text-gray-800 font-medium">{{ task.proyecto }}</p>
             </div>
 
-            <!-- Sucursal -->
             <div class="bg-indigo-50 rounded-lg p-4">
                 <h3 class="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-1">
                     <i class="pi pi-building mr-2"></i>Sucursal
@@ -50,7 +46,6 @@
                 <p class="text-gray-800 font-medium">{{ task.sucursal || 'No especificada' }}</p>
             </div>
 
-            <!-- Asignado a -->
             <div class="bg-blue-50 rounded-lg p-4">
                 <h3 class="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">
                     <i class="pi pi-user mr-2"></i>Asignado a
@@ -58,7 +53,6 @@
                 <p class="text-gray-800 font-medium">{{ task.usuario_asignado_nombre || 'Sin asignar' }}</p>
             </div>
 
-            <!-- Fecha límite -->
             <div class="rounded-lg p-4" [ngClass]="isOverdue() ? 'bg-red-50' : 'bg-green-50'">
                 <h3 class="text-sm font-semibold uppercase tracking-wide mb-1"
                     [ngClass]="isOverdue() ? 'text-red-600' : 'text-green-600'">
@@ -70,7 +64,6 @@
             </div>
         </div>
 
-        <!-- Información adicional -->
         <div class="border-t border-gray-200 pt-4">
             <div class="flex justify-between text-sm text-gray-500">
                 <span>

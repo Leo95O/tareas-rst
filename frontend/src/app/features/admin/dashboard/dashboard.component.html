@@ -141,7 +141,8 @@
 
 <!-- Modal de Tarea -->
 <app-task-modal
-  [(visible)]="modalVisible"
+  [visible]="modalVisible()"
+  (visibleChange)="modalVisible.set($event)"
   [task]="selectedTask()"
   [proyectos]="proyectos()"
   [estados]="estados()"
@@ -153,9 +154,9 @@
   (onDelete)="handleDeleteTask($event)"
 ></app-task-modal>
 
-<!-- Modal de Detalle de Tarea -->
 <app-task-detail-modal
-  [(visible)]="detailModalVisible"
+  [visible]="detailModalVisible()"
+  (visibleChange)="detailModalVisible.set(!!$event)"
   [task]="selectedTaskForDetail()"
   (onEdit)="openEditTaskModal($event); detailModalVisible.set(false)"
   (onClose)="detailModalVisible.set(false)"

@@ -9,11 +9,11 @@
 
         @if (task.proyecto) {
         <span class="inline-block px-3 py-1 text-xs font-medium rounded-full" [ngClass]="{
-            'bg-purple-100 text-purple-700': task.proyecto?.toLowerCase()?.includes('copywriting'),
+            'bg-purple-100 text-purple-700': task.proyecto.toLowerCase().includes('copywriting'),
             'bg-blue-100 text-blue-700':
-              task.proyecto?.toLowerCase()?.includes('ui design') ||
-              task.proyecto?.toLowerCase()?.includes('design'),
-            'bg-green-100 text-green-700': task.proyecto?.toLowerCase()?.includes('illustration')
+              task.proyecto.toLowerCase().includes('ui design') ||
+              task.proyecto.toLowerCase().includes('design'),
+            'bg-green-100 text-green-700': task.proyecto.toLowerCase().includes('illustration')
           }">
           {{ task.proyecto }}
         </span>

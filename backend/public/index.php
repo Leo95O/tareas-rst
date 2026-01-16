@@ -28,7 +28,7 @@ $app->config('debug', $debugMode);
 
 // A. CORS (Cross-Origin Resource Sharing)
 // Este SÍ debe ser global para permitir que el navegador pregunte desde otro dominio.
-$app->add(new \App\Middleware\CorsMiddleware());
+//$app->add(new \App\Middleware\CorsMiddleware());
 
 // NOTA IMPORTANTE:
 // NO agregamos AuthMiddleware aquí. 
