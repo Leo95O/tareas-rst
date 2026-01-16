@@ -2,34 +2,27 @@
 
 namespace App\Controllers;
 
-// 1. Usamos la Interfaz (Ajusta el namespace si tu interfaz está en otra carpeta)
-use App\Interfaces\Proyecto\ProyectoServiceInterface; 
+use App\Interfaces\Proyecto\ProyectoServiceInterface;
 use App\Utils\ApiResponse;
-use App\Validators\ProyectoValidator;
-use \Slim\Slim;
 
 class ProyectoController
 {
     private $proyectoService;
 
-    // 2. Inyección de Dependencias: Pedimos el Servicio
     public function __construct(ProyectoServiceInterface $service)
     {
         $this->proyectoService = $service;
     }
 
-    public function listar()
+    // Recibe filtros opcionales (ej: ['estado_id' => 1])
+    public function listar($filtros = [])
     {
         try {
-            $app = Slim::getInstance();
-            $usuario = $app->usuario; 
-
-            // El servicio inyectado ya sabe qué hacer
-            $proyectos = $this->proyectoService->listarProyectos($usuario);
+            $lista = $this->proyectoService->listarProyectos($filtros);
 
             $data = array_map(function ($p) {
                 return $p->toArray();
-            }, $proyectos);
+            }, $lista);
 
             ApiResponse::exito("Listado de proyectos.", $data);
         } catch (\Exception $e) {
@@ -41,43 +34,31 @@ class ProyectoController
     {
         try {
             $proyecto = $this->proyectoService->obtenerProyectoPorId($id);
-
             ApiResponse::exito("Proyecto recuperado.", $proyecto->toArray());
-
         } catch (\Exception $e) {
             ApiResponse::alerta($e->getMessage());
         }
     }
 
-    public function crear()
+    // Recibe datos limpios y el ID del creador
+    public function crear($datos, $creadorId)
     {
         try {
-            $app = Slim::getInstance();
-            $datos = json_decode($app->request->getBody(), true);
-            $usuario = $app->usuario;
-
-            ProyectoValidator::validarCreacion($datos);
-
-            $id = $this->proyectoService->crearProyecto($datos, $usuario);
+            $id = $this->proyectoService->crearProyecto($datos, $creadorId);
+            
             ApiResponse::exito("Proyecto creado.", ['id' => $id]);
-
         } catch (\Exception $e) {
             ApiResponse::alerta($e->getMessage());
         }
     }
 
-    public function editar($id)
+    // Recibe ID y datos a editar
+    public function editar($id, $datos)
     {
         try {
-            $app = Slim::getInstance();
-            $datos = json_decode($app->request->getBody(), true);
-            $usuario = $app->usuario;
-
-            ProyectoValidator::validarEdicion($datos);
-
-            $this->proyectoService->editarProyecto($id, $datos, $usuario);
+            $this->proyectoService->editarProyecto($id, $datos);
+            
             ApiResponse::exito("Proyecto actualizado.");
-
         } catch (\Exception $e) {
             ApiResponse::alerta($e->getMessage());
         }
@@ -86,12 +67,9 @@ class ProyectoController
     public function eliminar($id)
     {
         try {
-            $app = Slim::getInstance();
-            $usuario = $app->usuario;
-
-            $this->proyectoService->eliminarProyecto($id, $usuario);
-            ApiResponse::exito("Proyecto eliminado.");
-
+            $this->proyectoService->eliminarProyecto($id);
+            
+            ApiResponse::exito("Proyecto eliminado (Soft Delete).");
         } catch (\Exception $e) {
             ApiResponse::alerta($e->getMessage());
         }

@@ -1,40 +1,62 @@
 <?php
 
 use App\Controllers\ProyectoController;
+use App\Middleware\AuthMiddleware;
+use App\Middleware\ActiveUserMiddleware;
+use App\Middleware\RolMiddleware;
+use App\Constans\Roles;
 
+/** @var \Slim\Slim $app */
 $app = \Slim\Slim::getInstance();
 $container = $app->di;
 
-$app->group('/proyectos', function () use ($app, $container) {
+$app->group('/proyectos', 
+    AuthMiddleware::verificar($app), 
+    ActiveUserMiddleware::verificar($app),
+    function () use ($app, $container) {
 
-    // Listar todos los proyectos
-    $app->get('/', function () use ($container) {
+    // Listar (con filtros opcionales por query string)
+    $app->get('/', function () use ($app, $container) {
+        $filtros = $app->request->get(); // Extraemos query params
         $controller = $container->get(ProyectoController::class);
-        $controller->listar();
+        $controller->listar($filtros);
     });
 
-    // Crear proyecto
-    $app->post('/', function () use ($container) {
-        $controller = $container->get(ProyectoController::class);
-        $controller->crear();
-    });
-
-    // Obtener un proyecto específico
-    $app->get('/:id', function ($id) use ($container) {
+    $app->get('/:id', function ($id) use ($app, $container) {
         $controller = $container->get(ProyectoController::class);
         $controller->obtenerPorId($id);
     });
 
-    // Editar proyecto
-    $app->put('/:id', function ($id) use ($container) {
-        $controller = $container->get(ProyectoController::class);
-        $controller->editar($id);
-    });
+    // Rutas de Escritura (Admin/PM)
+    $rolesPermitidos = [Roles::ADMIN, Roles::PROJECT_MANAGER];
 
-    // Eliminar proyecto
-    $app->delete('/:id', function ($id) use ($container) {
-        $controller = $container->get(ProyectoController::class);
-        $controller->eliminar($id);
+    $app->group('/', RolMiddleware::verificar($app, $rolesPermitidos), function () use ($app, $container) {
+        
+        // Crear
+        $app->post('/', function () use ($app, $container) {
+            // EXTRACCIÓN: Aquí sacamos los datos de Slim
+            $datos = json_decode($app->request->getBody(), true);
+            $creadorId = $app->usuario->usuario_id; // Y el usuario del token
+
+            $controller = $container->get(ProyectoController::class);
+            // INYECCIÓN: Se los pasamos al controlador
+            $controller->crear($datos, $creadorId);
+        });
+
+        // Editar
+        $app->put('/:id', function ($id) use ($app, $container){
+            $datos = json_decode($app->request->getBody(), true);
+            
+            $controller = $container->get(ProyectoController::class);
+            $controller->editar($id, $datos);
+        });
+
+        // Eliminar
+        $app->delete('/:id', function ($id) use ($app, $container) {
+            $controller = $container->get(ProyectoController::class);
+            $controller->eliminar($id);
+        });
+
     });
 
 });

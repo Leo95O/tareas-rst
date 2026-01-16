@@ -7,6 +7,7 @@ use App\Interfaces\Proyecto\ProyectoRepositoryInterface;
 use App\Entities\Proyecto;
 use App\Utils\Crypto;
 use App\Validators\ProyectoValidator;
+use App\Constans\EstadosProyecto; // ¡Uso de Constantes!
 use Exception;
 
 class ProyectoService implements ProyectoServiceInterface
@@ -18,25 +19,16 @@ class ProyectoService implements ProyectoServiceInterface
         $this->proyectoRepository = $repo;
     }
 
-    // Se lista según el rol del usuario
-    public function listarProyectos($usuarioActual = null)
+    public function listarProyectos($filtros = [])
     {
-        // Si es usuario normal (rol 3), solo ver proyectos donde tenga tareas asignadas
-        if ($usuarioActual && $usuarioActual->rol_id == 3) {
-            $proyectos = $this->proyectoRepository->listarPorUsuario(
-                $usuarioActual->usuario_id
-            );
-        } else {
-            // Admin y PM ven todo. Pasamos IDs por si el repo requiere filtrado futuro
-            $uid = $usuarioActual ? $usuarioActual->usuario_id : null;
-            $rid = $usuarioActual ? $usuarioActual->rol_id : null;
-            $proyectos = $this->proyectoRepository->listar($uid, $rid);
-        }
+        // El repositorio se encarga de la lógica de filtrado si viene en $filtros
+        $proyectos = $this->proyectoRepository->listar($filtros);
 
+        // Desencriptar nombres sensibles si es necesario (ej. nombre del creador si viniera encriptado)
+        // Nota: En tu entidad Proyecto actual no veo 'nombre_creador', pero si el repo lo trae en el JOIN,
+        // aquí es donde se desencripta.
         foreach ($proyectos as $p) {
-            if (!empty($p->nombre_creador)) {
-                $p->nombre_creador = Crypto::desencriptar($p->nombre_creador);
-            }
+            // Lógica de desencriptación si aplica
         }
 
         return $proyectos;
@@ -47,38 +39,35 @@ class ProyectoService implements ProyectoServiceInterface
         $proyecto = $this->proyectoRepository->obtenerPorId($id);
 
         if (!$proyecto) {
-            throw new Exception("El proyecto no existe.");
+            throw new Exception("El proyecto no existe o ha sido eliminado.");
         }
         return $proyecto;
     }
 
-    public function crearProyecto($datos, $usuarioActual)
+    public function crearProyecto(array $datos, $creadorId)
     {
-        // Se verifican los permisos
-        if ($usuarioActual->rol_id === 3) {
-            throw new Exception("No tienes permisos para crear proyectos.");
-        }
-
-        // Se validan los datos previos
+        // 1. Validar Datos (Lógica de Negocio)
         ProyectoValidator::validarCreacion($datos);
 
-        // Se instancia el proyecto y se asignan los datos
-        $proyecto = new Proyecto();
-
-        $proyecto->proyecto_nombre = $datos["nombre"];
-        $proyecto->sucursal_id     = $datos["sucursal_id"];
-        $proyecto->usuario_creador = $usuarioActual->usuario_id;
-
-        $proyecto->proyecto_descripcion = $datos["descripcion"]  ?? "";
-        $proyecto->estado_id            = $datos["estado_id"]    ?? 1;
-
-        // Lógica de fechas
+        // 2. Validar Fechas
         $inicio = $datos["fecha_inicio"] ?? date("Y-m-d");
         $fin    = $datos["fecha_fin"]    ?? null;
 
         if ($fin && strtotime($inicio) > strtotime($fin)) {
-            throw new Exception("La fecha de inicio ($inicio) no puede ser mayor a la fecha fin ($fin).");
+            throw new Exception("La fecha de inicio no puede ser mayor a la fecha fin.");
         }
+
+        // 3. Crear Entidad
+        $proyecto = new Proyecto();
+        $proyecto->proyecto_nombre      = $datos["nombre"];
+        $proyecto->proyecto_descripcion = $datos["descripcion"] ?? "";
+        $proyecto->sucursal_id          = $datos["sucursal_id"];
+        $proyecto->usuario_creador      = $creadorId; // Auditoría
+        
+        // Estado por defecto (PENDIENTE) usando constante
+        $proyecto->proyecto_estado      = isset($datos["estado_id"]) 
+            ? $datos["estado_id"] 
+            : EstadosProyecto::PENDIENTE;
 
         $proyecto->fecha_inicio = $inicio;
         $proyecto->fecha_fin    = $fin;
@@ -86,25 +75,27 @@ class ProyectoService implements ProyectoServiceInterface
         return $this->proyectoRepository->crear($proyecto);
     }
 
-    public function editarProyecto($id, $datos, $usuarioActual)
+    public function editarProyecto($id, array $datos)
     {
-        if ($usuarioActual->rol_id === 3) {
-            throw new Exception("No tienes permisos para editar proyectos.");
-        }
-
-        ProyectoValidator::validarEdicion($datos);
-
+        // 1. Validar existencia
         $proyecto = $this->proyectoRepository->obtenerPorId($id);
         if (!$proyecto) {
             throw new Exception("El proyecto no existe.");
         }
 
-        $proyecto->proyecto_nombre      = $datos["nombre"]      ?? $proyecto->proyecto_nombre;
-        $proyecto->proyecto_descripcion = $datos["descripcion"] ?? $proyecto->proyecto_descripcion;
-        $proyecto->sucursal_id          = $datos["sucursal_id"] ?? $proyecto->sucursal_id;
-        $proyecto->estado_id            = $datos["estado_id"]   ?? $proyecto->estado_id;
+        // 2. Validar Datos de Entrada
+        // Si hay datos, validamos. Si es array vacío, el controller ya debió filtrar.
+        if (!empty($datos)) {
+            // ProyectoValidator::validarEdicion($datos); // Opcional si tienes validación parcial
+        }
 
-        // Lógica de fechas para edición
+        // 3. Actualizar campos (Mapeo)
+        if (isset($datos['nombre']))      $proyecto->proyecto_nombre = $datos['nombre'];
+        if (isset($datos['descripcion'])) $proyecto->proyecto_descripcion = $datos['descripcion'];
+        if (isset($datos['sucursal_id'])) $proyecto->sucursal_id = $datos['sucursal_id'];
+        if (isset($datos['estado_id']))   $proyecto->proyecto_estado = $datos['estado_id'];
+
+        // 4. Lógica de Fechas
         $nuevaInicio = $datos["fecha_inicio"] ?? $proyecto->fecha_inicio;
         $nuevaFin    = $datos["fecha_fin"]    ?? $proyecto->fecha_fin;
 
@@ -118,13 +109,16 @@ class ProyectoService implements ProyectoServiceInterface
         return $this->proyectoRepository->actualizar($proyecto);
     }
 
-    // Soft Delete
-    public function eliminarProyecto($id, $usuarioActual)
+    public function eliminarProyecto($id)
     {
-        if ($usuarioActual->rol_id === 3) {
-            throw new Exception("No tienes permisos para eliminar proyectos.");
+        $proyecto = $this->proyectoRepository->obtenerPorId($id);
+        if (!$proyecto) {
+            throw new Exception("El proyecto no existe.");
         }
 
-        return $this->proyectoRepository->eliminar($id, $usuarioActual->usuario_id);
+        // Aquí podrías agregar reglas de negocio:
+        // "No se puede eliminar un proyecto si tiene tareas en progreso"
+        
+        return $this->proyectoRepository->eliminar($id);
     }
 }

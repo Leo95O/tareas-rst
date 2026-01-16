@@ -2,116 +2,100 @@
 
 namespace App\Repositories;
 
-use App\Interfaces\Proyecto\ProyectoRepositoryInterface; // 1. Usar Interfaz
+use App\Interfaces\Proyecto\ProyectoRepositoryInterface;
 use App\Entities\Proyecto;
+use App\Entities\EstadoProyecto;
+use App\Constans\EstadosProyecto;
 use PDO;
 
-class ProyectoRepository implements ProyectoRepositoryInterface // 2. Implementar
+class ProyectoRepository implements ProyectoRepositoryInterface
 {
     private $conn;
 
-    // 3. Inyección de Dependencias
     public function __construct(PDO $connection)
     {
         $this->conn = $connection;
     }
 
-    /**
-     * Listar proyectos (Cumple con la firma de la interfaz)
-     * Por defecto trae todos (lógica de admin), pero recibe params por si quieres filtrar a futuro.
-     */
-    public function listar($usuarioId, $rolId)
+    private function hidratar($fila)
     {
-        $sql = "SELECT p.*, 
-                       u.usuario_nombre as nombre_creador,
-                       s.sucursal_nombre,
-                       pe.estado_nombre
-                FROM proyectos p
-                LEFT JOIN usuarios u ON p.usuario_creador = u.usuario_id
-                LEFT JOIN sucursales s ON p.sucursal_id = s.sucursal_id
-                LEFT JOIN proyecto_estados pe ON p.estado_id = pe.estado_id
-                WHERE p.fecha_eliminacion IS NULL 
-                ORDER BY p.fecha_creacion DESC";
+        // Nota: El constructor de Proyecto espera 'estado_id' o 'proyecto_estado'.
+        // Tu BD devuelve 'estado_id' en la tabla proyectos.
+        $proyecto = new Proyecto($fila);
 
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
-
-        $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $proyectos = [];
-        foreach ($resultados as $fila) {
-            $proyectos[] = new Proyecto($fila);
+        // Hidratar Estado si el JOIN trajo datos
+        if (!empty($fila['pe_estado_nombre'])) {
+            $estado = new EstadoProyecto([
+                'estado_id'     => $fila['pe_estado_id'],
+                'estado_nombre' => $fila['pe_estado_nombre'],
+                'estado_orden'  => isset($fila['pe_estado_orden']) ? $fila['pe_estado_orden'] : 0
+            ]);
+            $proyecto->setEstado($estado);
         }
 
-        return $proyectos;
+        return $proyecto;
     }
 
-    /**
-     * Listar solo proyectos donde el usuario tiene tareas asignadas
-     */
-    public function listarPorUsuario($usuarioId)
+    public function listar($filtros = [])
     {
-        $sql = "SELECT DISTINCT p.*, 
-                       u.usuario_nombre as nombre_creador,
-                       s.sucursal_nombre,
-                       pe.estado_nombre
+        // JOIN con proyecto_estados (alias pe)
+        // Seleccionamos p.* (proyectos) y pe.* (estados) con alias
+        $sql = "SELECT p.*, 
+                       pe.estado_id as pe_estado_id, 
+                       pe.estado_nombre as pe_estado_nombre,
+                       pe.estado_orden as pe_estado_orden
                 FROM proyectos p
-                LEFT JOIN usuarios u ON p.usuario_creador = u.usuario_id
-                LEFT JOIN sucursales s ON p.sucursal_id = s.sucursal_id
-                LEFT JOIN proyecto_estados pe ON p.estado_id = pe.estado_id
-                INNER JOIN tareas t ON t.proyecto_id = p.proyecto_id
-                WHERE p.fecha_eliminacion IS NULL 
-                AND t.usuario_asignado = :usuario_id
-                AND t.fecha_eliminacion IS NULL
-                ORDER BY p.fecha_creacion DESC";
+                INNER JOIN proyecto_estados pe ON p.estado_id = pe.estado_id
+                WHERE p.fecha_eliminacion IS NULL"; // Soft delete check
+        
+        // (Aquí podrías agregar lógica para filtrar por sucursal si viene en $filtros)
+
+        $sql .= " ORDER BY p.proyecto_id DESC";
 
         $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':usuario_id', $usuarioId);
         $stmt->execute();
-
+        
         $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+        
         $proyectos = [];
         foreach ($resultados as $fila) {
-            $proyectos[] = new Proyecto($fila);
+            $proyectos[] = $this->hidratar($fila);
         }
-
+        
         return $proyectos;
     }
 
     public function obtenerPorId($id)
     {
         $sql = "SELECT p.*, 
-                       u.usuario_nombre as nombre_creador,
-                       s.sucursal_nombre,
-                       pe.estado_nombre
+                       pe.estado_id as pe_estado_id, 
+                       pe.estado_nombre as pe_estado_nombre,
+                       pe.estado_orden as pe_estado_orden
                 FROM proyectos p
-                LEFT JOIN usuarios u ON p.usuario_creador = u.usuario_id
-                LEFT JOIN sucursales s ON p.sucursal_id = s.sucursal_id
-                LEFT JOIN proyecto_estados pe ON p.estado_id = pe.estado_id
-                WHERE p.proyecto_id = :id AND p.fecha_eliminacion IS NULL";
+                INNER JOIN proyecto_estados pe ON p.estado_id = pe.estado_id
+                WHERE p.proyecto_id = :id AND p.fecha_eliminacion IS NULL LIMIT 1";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':id', $id);
         $stmt->execute();
 
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $data ? new Proyecto($data) : null;
+        
+        return $data ? $this->hidratar($data) : null;
     }
 
     public function crear(Proyecto $proyecto)
     {
-        $sql = "INSERT INTO proyectos 
-                (proyecto_nombre, proyecto_descripcion, sucursal_id, estado_id, usuario_creador, fecha_inicio, fecha_fin, fecha_creacion)
-                VALUES 
-                (:nombre, :desc, :sucursal, :estado, :creador, :inicio, :fin, NOW())";
+        $sql = "INSERT INTO proyectos (proyecto_nombre, proyecto_descripcion, sucursal_id, estado_id, usuario_creador, fecha_inicio, fecha_fin, fecha_creacion) 
+                VALUES (:nombre, :descripcion, :sucursal, :estado, :creador, :inicio, :fin, NOW())";
+        
+        $estadoInicial = $proyecto->proyecto_estado ?: EstadosProyecto::PENDIENTE;
 
         $stmt = $this->conn->prepare($sql);
-
         $stmt->bindParam(':nombre', $proyecto->proyecto_nombre);
-        $stmt->bindParam(':desc', $proyecto->proyecto_descripcion);
+        $stmt->bindParam(':descripcion', $proyecto->proyecto_descripcion);
         $stmt->bindParam(':sucursal', $proyecto->sucursal_id);
-        $stmt->bindParam(':estado', $proyecto->estado_id);
+        $stmt->bindParam(':estado', $estadoInicial);
         $stmt->bindParam(':creador', $proyecto->usuario_creador);
         $stmt->bindParam(':inicio', $proyecto->fecha_inicio);
         $stmt->bindParam(':fin', $proyecto->fecha_fin);
@@ -125,58 +109,32 @@ class ProyectoRepository implements ProyectoRepositoryInterface // 2. Implementa
     public function actualizar(Proyecto $proyecto)
     {
         $sql = "UPDATE proyectos SET 
-                    proyecto_nombre = :nombre, 
-                    proyecto_descripcion = :desc,
-                    sucursal_id = :sucursal,
-                    estado_id = :estado,
-                    fecha_inicio = :inicio,
-                    fecha_fin = :fin
+                proyecto_nombre = :nombre, 
+                proyecto_descripcion = :descripcion,
+                fecha_inicio = :inicio,
+                fecha_fin = :fin,
+                estado_id = :estado 
                 WHERE proyecto_id = :id";
-
+        
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':nombre', $proyecto->proyecto_nombre);
-        $stmt->bindParam(':desc', $proyecto->proyecto_descripcion);
-        $stmt->bindParam(':sucursal', $proyecto->sucursal_id);
-        $stmt->bindParam(':estado', $proyecto->estado_id);
+        $stmt->bindParam(':descripcion', $proyecto->proyecto_descripcion);
         $stmt->bindParam(':inicio', $proyecto->fecha_inicio);
         $stmt->bindParam(':fin', $proyecto->fecha_fin);
+        $stmt->bindParam(':estado', $proyecto->proyecto_estado);
         $stmt->bindParam(':id', $proyecto->proyecto_id);
 
         return $stmt->execute();
     }
 
-    /**
-     * Soft Delete
-     * Actualizamos la firma para aceptar $usuarioId (aunque no lo usemos en la query)
-     * para cumplir con la interfaz.
-     */
-    public function eliminar($id, $usuarioId = null)
+    public function eliminar($id)
     {
+        // Soft Delete (según tu DB hay campo 'fecha_eliminacion')
         $sql = "UPDATE proyectos SET fecha_eliminacion = NOW() WHERE proyecto_id = :id";
+        
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':id', $id);
+        
         return $stmt->execute();
-    }
-
-    /**
-     * NUEVO MÉTODO: Requerido por la Interfaz para validaciones
-     */
-    public function existeNombre($nombre, $excluirId = null)
-    {
-        $sql = "SELECT COUNT(*) FROM proyectos WHERE proyecto_nombre = :nombre AND fecha_eliminacion IS NULL";
-        
-        if ($excluirId) {
-            $sql .= " AND proyecto_id != :id";
-        }
-
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':nombre', $nombre);
-        
-        if ($excluirId) {
-            $stmt->bindParam(':id', $excluirId);
-        }
-
-        $stmt->execute();
-        return $stmt->fetchColumn() > 0;
     }
 }
