@@ -4,8 +4,6 @@ namespace App\Controllers;
 
 use App\Interfaces\Tarea\TareaServiceInterface;
 use App\Utils\ApiResponse;
-use App\Validators\TareaValidator;
-use \Slim\Slim;
 
 class TareaController
 {
@@ -16,108 +14,60 @@ class TareaController
         $this->tareaService = $service;
     }
 
-    // GET /tareas
-    public function listar()
+    public function listar($filtros = [])
     {
         try {
-            $app = Slim::getInstance();
-            $usuarioLogueado = $app->usuario;
-
-            $tareas = $this->tareaService->listarTareas($usuarioLogueado);
+            $lista = $this->tareaService->listarTareas($filtros);
 
             $data = array_map(function ($t) {
                 return $t->toArray();
-            }, $tareas);
+            }, $lista);
 
-            ApiResponse::exito("Tareas recuperadas correctamente.", $data);
-
+            ApiResponse::exito("Listado de tareas.", $data);
         } catch (\Exception $e) {
-            ApiResponse::error("Error al listar tareas: " . $e->getMessage());
+            ApiResponse::error($e->getMessage());
         }
     }
 
-    // POST /tareas
-    public function crear()
+    public function crear($datos, $creadorId)
     {
         try {
-            $app = Slim::getInstance();
-            $datos = json_decode($app->request->getBody(), true);
-            $usuarioLogueado = $app->usuario;
-
-            TareaValidator::validarCreacion($datos);
-
-            $nuevoId = $this->tareaService->crearTarea($datos, $usuarioLogueado);
-
-            ApiResponse::exito("Tarea creada exitosamente.", ['id' => $nuevoId]);
-
+            $id = $this->tareaService->crearTarea($datos, $creadorId);
+            
+            ApiResponse::exito("Tarea creada exitosamente.", ['id' => $id]);
         } catch (\Exception $e) {
             ApiResponse::alerta($e->getMessage());
         }
     }
 
-    // PUT /tareas/:id
-    public function editar($id)
+    public function editar($id, $datos)
     {
         try {
-            $app = Slim::getInstance();
-            $datos = json_decode($app->request->getBody(), true);
-            $usuarioLogueado = $app->usuario;
-
-            TareaValidator::validarEdicion($datos);
-
-            $this->tareaService->editarTarea($id, $datos, $usuarioLogueado);
-
-            ApiResponse::exito("Tarea actualizada correctamente.");
-
+            $this->tareaService->editarTarea($id, $datos);
+            
+            ApiResponse::exito("Tarea actualizada.");
         } catch (\Exception $e) {
             ApiResponse::alerta($e->getMessage());
         }
     }
 
-    // DELETE /tareas/:id
     public function eliminar($id)
     {
         try {
-            $app = Slim::getInstance();
-            $usuarioLogueado = $app->usuario;
-
-            $this->tareaService->eliminarTarea($id, $usuarioLogueado);
-
-            ApiResponse::exito("Tarea eliminada correctamente.");
-
+            $this->tareaService->eliminarTarea($id);
+            
+            ApiResponse::exito("Tarea eliminada.");
         } catch (\Exception $e) {
-            ApiResponse::alerta("No se pudo eliminar la tarea: " . $e->getMessage());
+            ApiResponse::alerta($e->getMessage());
         }
     }
 
-    // GET /tareas/bolsa
-    public function listarBolsa()
+    // Método específico para la acción de asignar (si decides usar ruta dedicada)
+    public function asignar($id, $usuarioId)
     {
         try {
-            $tareas = $this->tareaService->listarBolsa();
-
-            $data = array_map(function ($t) {
-                return $t->toArray();
-            }, $tareas);
-
-            ApiResponse::exito("Tareas disponibles recuperadas correctamente.", $data);
-
-        } catch (\Exception $e) {
-            ApiResponse::error("Error al listar tareas disponibles: " . $e->getMessage());
-        }
-    }
-
-    // PUT /tareas/:id/asignarme
-    public function asignarme($id)
-    {
-        try {
-            $app = Slim::getInstance();
-            $usuarioLogueado = $app->usuario;
-
-            $this->tareaService->asignarTarea($id, $usuarioLogueado);
-
-            ApiResponse::exito("¡Tarea asignada correctamente! Ahora puedes verla en 'Mis Tareas'.");
-
+            $this->tareaService->asignarTarea($id, $usuarioId);
+            ApiResponse::exito("Tarea asignada correctamente.");
         } catch (\Exception $e) {
             ApiResponse::alerta($e->getMessage());
         }

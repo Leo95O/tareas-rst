@@ -5,7 +5,8 @@ namespace App\Services;
 use App\Interfaces\Tarea\TareaServiceInterface;
 use App\Interfaces\Tarea\TareaRepositoryInterface;
 use App\Entities\Tarea;
-use App\Utils\Crypto;
+use App\Validators\TareaValidator;
+use App\Constans\EstadosTarea;
 use Exception;
 
 class TareaService implements TareaServiceInterface
@@ -17,122 +18,90 @@ class TareaService implements TareaServiceInterface
         $this->tareaRepository = $tareaRepository;
     }
 
-    public function listarTareas($usuario)
+    // LISTAR: Recibe filtros limpios, el Repo hace el trabajo sucio del SQL
+    public function listarTareas($filtros = [])
     {
-        $tareas = $this->tareaRepository->listar($usuario->usuario_id, $usuario->rol_id);
-
-        foreach ($tareas as $tarea) {
-            $tarea->nombre_asignado = !empty($tarea->nombre_asignado)
-                ? Crypto::desencriptar($tarea->nombre_asignado)
-                : "Sin asignar";
-        }
-        return $tareas;
+        return $this->tareaRepository->listar($filtros);
     }
 
-    public function crearTarea($datos, $usuarioActual)
+    // CREAR: Lógica pura de negocio
+    public function crearTarea($datos, $creadorId)
     {
+        // 1. Validar Datos
+        TareaValidator::validarCreacion($datos);
+
+        // 2. Construir Objeto
         $tarea = new Tarea();
         $tarea->tarea_titulo      = $datos['titulo'];
-        
-        // Si es usuario normal (3), se asigna a sí mismo. Si es Admin, toma el valor del formulario.
-        $tarea->usuario_asignado  = ($usuarioActual->rol_id === 3)
-            ? $usuarioActual->usuario_id
-            : ($datos['usuario_asignado'] ?? null);
-            
-        $tarea->tarea_descripcion = $datos['descripcion']  ?? '';
+        $tarea->tarea_descripcion = $datos['descripcion'] ?? '';
         $tarea->fecha_limite      = $datos['fecha_limite'] ?? null;
-        $tarea->prioridad_id      = $datos['prioridad_id'] ?? 2;
-        $tarea->estado_id         = $datos['estado_id']    ?? 1;
+        $tarea->prioridad_id      = $datos['prioridad_id'] ?? 2; // Default: Media
+        $tarea->estado_id         = $datos['estado_id']    ?? EstadosTarea::BACKLOG;
         $tarea->proyecto_id       = $datos['proyecto_id'];
         $tarea->categoria_id      = $datos['categoria_id'] ?? null;
-        $tarea->usuario_creador   = $usuarioActual->usuario_id;
+        $tarea->usuario_creador_id = $creadorId; // Auditoría
+
+        // Asignación: Si viene en el array, se asigna. Si no, queda null (Bolsa).
+        // La lógica de "si soy usuario normal me asigno a mí mismo" la mueve el Controlador/Frontend.
+        if (isset($datos['usuario_asignado'])) {
+            $tarea->usuario_asignado_id = $datos['usuario_asignado'];
+        }
 
         return $this->tareaRepository->crear($tarea);
     }
 
-    public function editarTarea($id, $datos, $usuarioActual)
+    // EDITAR: Sin IFs de roles. Solo reglas de negocio universales.
+    public function editarTarea($id, $datos)
     {
-        $tareaActual = $this->tareaRepository->obtenerPorId($id);
-        if (!$tareaActual) {
+        $tarea = $this->tareaRepository->obtenerPorId($id);
+        if (!$tarea) {
             throw new Exception("La tarea no existe.");
         }
 
-        // Validación de permisos para Rol 3 (Usuario)
-        if ($usuarioActual->rol_id === 3) {
-            $soyElAsignado = $tareaActual->usuario_asignado === $usuarioActual->usuario_id;
-            $soyElCreador = $tareaActual->usuario_creador === $usuarioActual->usuario_id;
+        // Validación de negocio (ej: no se puede editar una tarea finalizada hace 1 mes)
+        // ... aquí iría esa lógica si existiera ...
 
-            if (!$soyElAsignado && !$soyElCreador) {
-                throw new Exception("No tienes permiso para editar esta tarea.");
-            }
+        // Actualización Parcial (Patch)
+        if (isset($datos['titulo']))      $tarea->tarea_titulo = $datos['titulo'];
+        if (isset($datos['descripcion'])) $tarea->tarea_descripcion = $datos['descripcion'];
+        if (isset($datos['fecha_limite'])) $tarea->fecha_limite = $datos['fecha_limite'];
+        if (isset($datos['prioridad_id'])) $tarea->prioridad_id = $datos['prioridad_id'];
+        if (isset($datos['estado_id']))    $tarea->estado_id = $datos['estado_id'];
+        
+        // Asignación explícita (incluyendo desasignar con null)
+        if (array_key_exists('usuario_asignado', $datos)) {
+            $tarea->usuario_asignado_id = $datos['usuario_asignado'];
         }
 
-        // Lógica de actualización según Rol
-        if ($usuarioActual->rol_id === 3) {
-            // Usuario Normal: Solo puede cambiar el estado (avance)
-            $tareaActual->estado_id = $datos['estado_id'] ?? $tareaActual->estado_id;
-        } else {
-            // Admin/PM: Puede editar todo
-            $tareaActual->tarea_titulo      = $datos['titulo']           ?? $tareaActual->tarea_titulo;
-            $tareaActual->tarea_descripcion = $datos['descripcion']      ?? $tareaActual->tarea_descripcion;
-            $tareaActual->fecha_limite      = $datos['fecha_limite']     ?? $tareaActual->fecha_limite;
-            $tareaActual->prioridad_id      = $datos['prioridad_id']     ?? $tareaActual->prioridad_id;
-            $tareaActual->estado_id         = $datos['estado_id']        ?? $tareaActual->estado_id;
-            
-            // Asignación de usuario (maneja nulos o cambios)
-            if (array_key_exists('usuario_asignado', $datos)) {
-                $tareaActual->usuario_asignado = $datos['usuario_asignado'];
-            }
-        }
-
-        return $this->tareaRepository->actualizar($tareaActual);
+        return $this->tareaRepository->actualizar($tarea);
     }
 
-    public function eliminarTarea($id, $usuarioActual)
+    // ELIMINAR: Directo al grano
+    public function eliminarTarea($id)
     {
         $tarea = $this->tareaRepository->obtenerPorId($id);
-
         if (!$tarea) {
-            throw new Exception("La tarea no existe o ya fue eliminada.");
-        }
-
-        // Validación de permisos para borrar
-        if ($usuarioActual->rol_id === 3) {
-            if (
-                $tarea->usuario_creador != $usuarioActual->usuario_id &&
-                $tarea->usuario_asignado != $usuarioActual->usuario_id
-            ) {
-                throw new Exception("No tienes permiso para eliminar esta tarea.");
-            }
+            throw new Exception("La tarea no existe.");
         }
 
         return $this->tareaRepository->eliminar($id);
     }
 
-    public function listarBolsa()
-    {
-        $tareas = $this->tareaRepository->listarSinAsignar();
-
-        foreach ($tareas as $tarea) {
-            $tarea->nombre_asignado = "Sin asignar";
-        }
-
-        return $tareas;
-    }
-
-    public function asignarTarea($tareaId, $usuario)
+    // ASIGNAR: Acción atómica
+    public function asignarTarea($tareaId, $usuarioId)
     {
         $tarea = $this->tareaRepository->obtenerPorId($tareaId);
         if (!$tarea) {
             throw new Exception("La tarea no existe.");
         }
 
-        // Verificar que la tarea NO tiene usuario asignado
-        if (!empty($tarea->usuario_asignado)) {
-            throw new Exception("Esta tarea ya está asignada a otro usuario.");
+        // Regla de Negocio: No se puede robar una tarea ya asignada
+        if (!empty($tarea->usuario_asignado_id)) {
+            throw new Exception("Esta tarea ya está asignada. Primero debe liberarse.");
         }
 
-        // Asignar la tarea al usuario actual
-        return $this->tareaRepository->asignarUsuario($tareaId, $usuario->usuario_id);
+        // Actualizamos el objeto en memoria y guardamos
+        $tarea->usuario_asignado_id = $usuarioId;
+        return $this->tareaRepository->actualizar($tarea);
     }
 }
