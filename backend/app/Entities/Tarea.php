@@ -2,7 +2,7 @@
 
 namespace App\Entities;
 
-use App\Constans\EstadosTarea;
+use App\Constants\EstadosTarea;
 
 class Tarea
 {

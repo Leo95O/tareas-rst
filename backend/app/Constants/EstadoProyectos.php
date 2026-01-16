@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Constans;
+namespace App\Constants;
 
 class EstadosProyecto {
     // Basado en tu tabla 'proyecto_estados' del dump SQL

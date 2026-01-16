@@ -2,8 +2,6 @@
 
 namespace App\Interfaces\Usuario;
 
-use App\Entities\Usuario;
-
 interface UsuarioServiceInterface
 {
     public function loginUsuario($correo, $password);

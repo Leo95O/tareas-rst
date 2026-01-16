@@ -6,10 +6,8 @@ use App\Interfaces\Usuario\UsuarioServiceInterface;
 use App\Interfaces\Usuario\UsuarioRepositoryInterface;
 use App\Interfaces\LoginGuard\LoginGuardServiceInterface;
 use App\Entities\Usuario;
-use App\Entities\EstadoUsuario;
 use App\Utils\Crypto;
-use App\Constans\Roles;
-use App\Constans\Estados;
+use App\Constants\Estados;
 use Exception;
 
 class UsuarioService implements UsuarioServiceInterface

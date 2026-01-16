@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Constans;
+namespace App\Constants;
 
 class EstadosTarea {
     const BACKLOG = 1;

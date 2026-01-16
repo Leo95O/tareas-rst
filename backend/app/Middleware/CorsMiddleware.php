@@ -3,8 +3,6 @@
 namespace App\Middleware;
 
 use \Slim\Middleware;
-
-// controlan las peticiones HTTP entre diferentes origenes (dominios).
 class CorsMiddleware extends Middleware
 {
     public function call()

@@ -2,8 +2,8 @@
 
 namespace App\Entities;
 
-use App\Constans\Estados; // Para evitar el número mágico 1 (Activo)
-use App\Constans\Roles;   // Para evitar el número mágico 1 (Admin)
+use App\Constants\Estados; // Para evitar el número mágico 1 (Activo)
+use App\Constants\Roles;   // Para evitar el número mágico 1 (Admin)
 
 class Usuario
 {

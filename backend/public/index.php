@@ -1,33 +1,44 @@
 <?php
 
-// Carga de configuración inicial y autoloader de dependencias
+// 1. Carga de dependencias
 require_once __DIR__ . '/../config/config.php'; 
 require_once __DIR__ . '/../vendor/autoload.php'; 
 
-// Carga de variables de entorno desde archivo .env
+// 2. Carga de variables de entorno
 $dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
-// Construcción del contenedor de inyección de dependencias
+// 3. Contenedor de Inyección de Dependencias
 $container = require __DIR__ . '/../config/container.php';
 
-// Inicialización de la instancia de Slim Framework
+// 4. Inicialización de Slim
 $app = new \Slim\Slim();
 
-// Asignación del contenedor a la instancia de la aplicación para su uso en rutas
+// 5. Inyectar contenedor en la App (Vital para los Controllers)
 $app->di = $container;
 
-// Configuración de entorno (Debug activado para desarrollo)
-$app->config('debug', true);
+// 6. Configuración (Dinámica según entorno)
+// Usamos filter_var para convertir el string "true"/"false" del .env a booleano real
+$debugMode = filter_var(getenv('APP_DEBUG'), FILTER_VALIDATE_BOOLEAN);
+$app->config('debug', $debugMode);
 
-// Configuración e implementación del Middleware de Autenticación
-$usuarioRepo = $container->get(\App\Interfaces\Usuario\UsuarioRepositoryInterface::class);
-$app->add(new \App\Middleware\AuthMiddleware($usuarioRepo));
+// -----------------------------------------------------------------------------
+// MIDDLEWARES GLOBALES
+// -----------------------------------------------------------------------------
 
-// Configuración del Middleware para gestión de CORS
+// A. CORS (Cross-Origin Resource Sharing)
+// Este SÍ debe ser global para permitir que el navegador pregunte desde otro dominio.
 $app->add(new \App\Middleware\CorsMiddleware());
 
-// Ruta genérica OPTIONS para manejar solicitudes preflight del navegador
+// NOTA IMPORTANTE:
+// NO agregamos AuthMiddleware aquí. 
+// La seguridad se aplica GRUPO POR GRUPO en los archivos de rutas.
+// Esto permite que el Login sea público.
+
+// -----------------------------------------------------------------------------
+// MANEJO DE PREFLIGHT (OPTIONS)
+// -----------------------------------------------------------------------------
+// Necesario para que Slim 2 no bloquee las peticiones complejas (con headers custom)
 $app->options('/:resource+', function ($resource) use ($app) {
     $app->response->status(200);
     $app->response->headers->set('Access-Control-Allow-Origin', '*');
@@ -35,12 +46,19 @@ $app->options('/:resource+', function ($resource) use ($app) {
     $app->response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
 });
 
-// Importación de definiciones de rutas de la API
-require_once __DIR__ . '/../rest/datamaster/datamaster.php';
-require_once __DIR__ . '/../rest/proyectos/proyectos.php';
-require_once __DIR__ . '/../rest/reportes/reportes.php';
-require_once __DIR__ . '/../rest/tareas/tareas.php';
-require_once __DIR__ . '/../rest/usuarios/usuarios.php';
+// -----------------------------------------------------------------------------
+// RUTAS (MÓDULOS)
+// -----------------------------------------------------------------------------
+// El orden no altera el producto, pero mantenemos alfabético o lógico.
 
-// Ejecución de la aplicación
+require_once __DIR__ . '/../rest/datamaster/datamaster.php';
+require_once __DIR__ . '/../rest/usuarios/usuarios.php';
+require_once __DIR__ . '/../rest/sucursales/sucursales.php'; // ¡Faltaba este!
+require_once __DIR__ . '/../rest/proyectos/proyectos.php';
+require_once __DIR__ . '/../rest/tareas/tareas.php';
+require_once __DIR__ . '/../rest/reportes/reportes.php';
+
+// -----------------------------------------------------------------------------
+// EJECUCIÓN
+// -----------------------------------------------------------------------------
 $app->run();

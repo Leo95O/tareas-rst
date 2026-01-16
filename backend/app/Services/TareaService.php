@@ -6,7 +6,7 @@ use App\Interfaces\Tarea\TareaServiceInterface;
 use App\Interfaces\Tarea\TareaRepositoryInterface;
 use App\Entities\Tarea;
 use App\Validators\TareaValidator;
-use App\Constans\EstadosTarea;
+use App\Constants\EstadosTarea;
 use Exception;
 
 class TareaService implements TareaServiceInterface

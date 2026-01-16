@@ -2,7 +2,7 @@
 
 namespace App\Entities;
 
-use App\Constans\Estados; // Reutilizamos constantes globales (1=Activo, 2=Inactivo)
+use App\Constants\Estados; // Reutilizamos constantes globales (1=Activo, 2=Inactivo)
 
 class Sucursal
 {

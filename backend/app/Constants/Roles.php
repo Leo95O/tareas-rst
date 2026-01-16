@@ -1,5 +1,5 @@
 <?php
-namespace App\Constans;
+namespace App\Constants;
 
 class Roles {
     const ADMIN = 1;

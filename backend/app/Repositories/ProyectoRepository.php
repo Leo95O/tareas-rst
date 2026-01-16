@@ -5,7 +5,7 @@ namespace App\Repositories;
 use App\Interfaces\Proyecto\ProyectoRepositoryInterface;
 use App\Entities\Proyecto;
 use App\Entities\EstadoProyecto;
-use App\Constans\EstadosProyecto;
+use App\Constants\EstadosProyecto;
 use PDO;
 
 class ProyectoRepository implements ProyectoRepositoryInterface

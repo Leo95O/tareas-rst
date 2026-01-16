@@ -4,7 +4,7 @@ use App\Controllers\UsuarioController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\RolMiddleware;
 use App\Middleware\ActiveUserMiddleware; // <--- 1. IMPORTAR
-use App\Constans\Roles;
+use App\Constants\Roles;
 
 /** @var \Slim\Slim $app */
 $app = \Slim\Slim::getInstance();

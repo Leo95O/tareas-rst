@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Interfaces\Sucursal\SucursalServiceInterface;
 use App\Interfaces\Sucursal\SucursalRepositoryInterface;
 use App\Entities\Sucursal;
-use App\Constans\Estados;
+use App\Constants\Estados;
 use Exception;
 
 class SucursalService implements SucursalServiceInterface

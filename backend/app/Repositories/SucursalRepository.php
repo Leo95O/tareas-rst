@@ -5,7 +5,7 @@ namespace App\Repositories;
 use App\Interfaces\Sucursal\SucursalRepositoryInterface;
 use App\Entities\Sucursal;
 use App\Entities\EstadoSucursal;
-use App\Constans\Estados;
+use App\Constants\Estados;
 use PDO;
 
 class SucursalRepository implements SucursalRepositoryInterface

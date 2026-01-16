@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Constans; 
+namespace App\Constants; 
 
 class Estados {
     const ACTIVO = 1;

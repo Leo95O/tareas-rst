@@ -5,9 +5,8 @@ namespace App\Services;
 use App\Interfaces\Proyecto\ProyectoServiceInterface;
 use App\Interfaces\Proyecto\ProyectoRepositoryInterface;
 use App\Entities\Proyecto;
-use App\Utils\Crypto;
 use App\Validators\ProyectoValidator;
-use App\Constans\EstadosProyecto; // ¡Uso de Constantes!
+use App\Constants\EstadosProyecto; // ¡Uso de Constantes!
 use Exception;
 
 class ProyectoService implements ProyectoServiceInterface

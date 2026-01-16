@@ -2,7 +2,7 @@
 
 namespace App\Entities;
 
-use App\Constans\EstadosProyecto;
+use App\Constants\EstadosProyecto;
 
 class Proyecto
 {
