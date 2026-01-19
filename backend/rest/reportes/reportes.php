@@ -7,7 +7,6 @@ use App\Middleware\RolMiddleware;
 use App\Constants\Roles; // Asegúrate de que la carpeta se llame 'Constants'
 
 /** @var \Slim\Slim $app */
-$app = \Slim\Slim::getInstance();
 $container = $app->di;
 
 // GRUPO REPORTES

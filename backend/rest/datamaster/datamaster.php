@@ -5,7 +5,6 @@ use App\Middleware\AuthMiddleware;
 use App\Middleware\ActiveUserMiddleware;
 
 /** @var \Slim\Slim $app */
-$app = \Slim\Slim::getInstance();
 $container = $app->di;
 
 // GRUPO DATAMASTER

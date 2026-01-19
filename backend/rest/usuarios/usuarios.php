@@ -6,67 +6,68 @@ use App\Middleware\RolMiddleware;
 use App\Middleware\ActiveUserMiddleware;
 use App\Constants\Roles;
 
-/** @var \Slim\Slim $app */
-$app = \Slim\Slim::getInstance();
+/** * @var \Slim\Slim $app 
+ * Esta variable viene "heredada" desde public/index.php gracias al require_once.
+ * No necesitamos hacer $app = \Slim\Slim::getInstance();
+ */
+
+// Recuperamos el contenedor directamente de la instancia que ya nos pasaron.
 $container = $app->di;
 
 // GRUPO PRINCIPAL: /usuarios
-// Nota: Aquí NO aplicamos seguridad todavía, para permitir rutas públicas dentro.
 $app->group('/usuarios', function () use ($app, $container) {
 
     // =============================================================
-    // 1. ZONA PÚBLICA (Sin Token ni Verificación de Usuario)
+    // 1. ZONA PÚBLICA (Sin Token)
     // =============================================================
     
     // POST /usuarios/login
     $app->post('/login', function () use ($app, $container) {
+        // Decodificar JSON del body
         $datos = json_decode($app->request->getBody(), true);
+        
         /** @var UsuarioController $controller */
         $controller = $container->get(UsuarioController::class);
         $controller->login($datos);
     });
 
-    // Si tuvieras registro público, iría aquí también:
-    // $app->post('/registro', ...);
-
-
     // =============================================================
     // 2. ZONA PROTEGIDA (Requiere Token + Usuario Activo)
     // =============================================================
     
-    // Creamos un sub-grupo para aplicar los middlewares de seguridad en cadena solo a lo de adentro
+    // Grupo intermedio para aplicar seguridad en cascada
     $app->group('/', 
-        AuthMiddleware::verificar($app),       // 1. Validar Token JWT
-        ActiveUserMiddleware::verificar($app), // 2. Validar que no esté baneado
+        AuthMiddleware::verificar($app),       // 1. ¿Token válido?
+        ActiveUserMiddleware::verificar($app), // 2. ¿Usuario no baneado?
         function () use ($app, $container) {
 
-        // --- RUTAS ADMIN ---
-        // Estas rutas ya heredan la seguridad del grupo padre, y añaden la del Rol
+        // --- RUTAS ADMIN (Solo Rol Admin) ---
         $app->group('/admin', RolMiddleware::verificar($app, [Roles::ADMIN]), function () use ($app, $container) {
             
-            /** @var \Slim\Slim $app */
-
+            // Listar usuarios (filtros opcionales)
             $app->get('/listar', function () use ($app, $container) {
                 $rolId = $app->request->get('rol_id');
                 $controller = $container->get(UsuarioController::class);
                 $controller->listarTodo($rolId);
             });
 
+            // Crear administrador
             $app->post('/crear', function () use ($app, $container) {
                 $datos = json_decode($app->request->getBody(), true);
                 $controller = $container->get(UsuarioController::class);
                 $controller->crearAdmin($datos);
             });
 
+            // Editar administrador
             $app->put('/editar/:id', function ($id) use ($app, $container){
                 $datos = json_decode($app->request->getBody(), true);
                 $controller = $container->get(UsuarioController::class);
                 $controller->editarAdmin($id, $datos);
             });
 
+            // Eliminar administrador
             $app->delete('/:id', function ($id) use ($app, $container) {
-                /** @var \Slim\Slim $app */
-                // El usuario ya fue inyectado por AuthMiddleware
+                // El middleware AuthMiddleware ya inyectó el usuario en la app
                 $usuarioLogueado = $app->usuario; 
                 
                 $controller = $container->get(UsuarioController::class);
@@ -74,8 +75,7 @@ $app->group('/usuarios', function () use ($app, $container) {
             });
         });
 
-        // Aquí podrías agregar otras rutas protegidas para usuarios normales
-        // Ej: $app->get('/perfil', ...);
+        // Aquí irían otras rutas protegidas de usuario normal...
 
     }); // Fin del grupo protegido
 
