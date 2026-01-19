@@ -126,8 +126,8 @@ class TareaRepository implements TareaRepositoryInterface
         $stmt->bindParam(':estado', $tarea->estado_id);
         $stmt->bindParam(':proyecto', $tarea->proyecto_id);
         $stmt->bindParam(':categoria', $tarea->categoria_id);
-        $stmt->bindParam(':asignado', $tarea->usuario_asignado); // Corregido según Entity y DB
-        $stmt->bindParam(':creador', $tarea->usuario_creador);   // Corregido según Entity y DB
+        $stmt->bindParam(':asignado', $tarea->usuario_asignado);
+        $stmt->bindParam(':creador', $tarea->usuario_creador);   
 
         $stmt->execute();
         return $this->conn->lastInsertId();

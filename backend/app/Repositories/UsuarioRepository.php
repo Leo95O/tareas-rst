@@ -176,6 +176,7 @@ class UsuarioRepository implements UsuarioRepositoryInterface
         return $stmt->execute();
     }
 
+    //futura implementacion a Redis 
     public function actualizarToken($usuarioId, $token)
     {
         $sql = "UPDATE usuarios SET usuario_token = :token WHERE usuario_id = :id";

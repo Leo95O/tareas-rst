@@ -10,7 +10,10 @@ class Auth
     private static $encrypt = ['HS256'];
 // En Auth.php y Crypto.php, simplificar a:
     private static function getSecretKey() {
-       if (!empty(self::$secret_key)) return self::$secret_key;
+       if (!empty(self::$secret_key)) {
+        return self::$secret_key;
+       }
+        
 
     // Solo usar getenv o $_ENV
     self::$secret_key = getenv('JWT_SECRET') ?: $_ENV['JWT_SECRET'] ?: '';
