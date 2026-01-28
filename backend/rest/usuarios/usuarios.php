@@ -7,76 +7,91 @@ use App\Middleware\ActiveUserMiddleware;
 use App\Constants\Roles;
 
 /** * @var \Slim\Slim $app 
- * Esta variable viene "heredada" desde public/index.php gracias al require_once.
- * No necesitamos hacer $app = \Slim\Slim::getInstance();
+ * @var \DI\Container $container
  */
-
-// Recuperamos el contenedor directamente de la instancia que ya nos pasaron.
 $container = $app->di;
 
-// GRUPO PRINCIPAL: /usuarios
-$app->group('/usuarios', function () use ($app, $container) {
-
-    // =============================================================
-    // 1. ZONA PÚBLICA (Sin Token)
-    // =============================================================
+// =============================================================================
+// HELPER LOCAL: Parseo de JSON seguro (Solución al DRY)
+// =============================================================================
+// Esto evita repetir json_decode en cada ruta y maneja errores de sintaxis.
+$getJson = function () use ($app) {
+    $body = $app->request->getBody();
+    $data = json_decode($body, true);
     
-    // POST /usuarios/login
-    $app->post('/login', function () use ($app, $container) {
-        // Decodificar JSON del body
-        $datos = json_decode($app->request->getBody(), true);
-        
-        /** @var UsuarioController $controller */
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        // Si el JSON está mal formado, detenemos todo aquí mismo.
+        // Usamos ApiResponse (o el formato manual si prefieres no importarlo aquí)
+        $app->response->status(400);
+        $app->response->headers->set('Content-Type', 'application/json');
+        echo json_encode(['tipo' => 2, 'mensajes' => ['JSON inválido o mal formado.'], 'data' => []]);
+        $app->stop();
+    }
+    return $data;
+};
+
+// =============================================================================
+// RUTAS DE USUARIOS
+// =============================================================================
+
+$app->group('/usuarios', function () use ($app, $container, $getJson) {
+
+    // -------------------------------------------------------------------------
+    // 1. ZONA PÚBLICA
+    // -------------------------------------------------------------------------
+    
+    $app->post('/login', function () use ($container, $getJson) {
         $controller = $container->get(UsuarioController::class);
-        $controller->login($datos);
+        $controller->login($getJson()); // ¡Mira qué limpio!
     });
 
-    // =============================================================
-    // 2. ZONA PROTEGIDA (Requiere Token + Usuario Activo)
-    // =============================================================
+    // -------------------------------------------------------------------------
+    // 2. ZONA PROTEGIDA (Auth + Active + Roles)
+    // -------------------------------------------------------------------------
     
-    // Grupo intermedio para aplicar seguridad en cascada
-    $app->group('/', 
-        AuthMiddleware::verificar($app),       // 1. ¿Token válido?
-        ActiveUserMiddleware::verificar($app), // 2. ¿Usuario no baneado?
-        function () use ($app, $container) {
+    // Definimos los middlewares de seguridad básica
+    $seguridadBasica = [
+        AuthMiddleware::verificar($app),
+        ActiveUserMiddleware::verificar($app)
+    ];
 
-        // --- RUTAS ADMIN (Solo Rol Admin) ---
-        $app->group('/admin', RolMiddleware::verificar($app, [Roles::ADMIN]), function () use ($app, $container) {
+    // GRUPO GENERAL PROTEGIDO
+    // Usamos call_user_func_array para aplicar los middlewares sin anidar otro grupo innecesario
+    // (Nota: En Slim 2, para aplicar array de middlewares a un grupo, la sintaxis varía, 
+    // mantenemos el anidamiento mínimo necesario pero organizado).
+    
+    $app->group('/', $seguridadBasica[0], $seguridadBasica[1], function () use ($app, $container, $getJson) {
+
+        // --- SUB-GRUPO ADMIN ---
+        $app->group('/admin', RolMiddleware::verificar($app, [Roles::ADMIN]), function () use ($app, $container, $getJson) {
             
-            // Listar usuarios (filtros opcionales)
+            // Listar
             $app->get('/listar', function () use ($app, $container) {
                 $rolId = $app->request->get('rol_id');
-                $controller = $container->get(UsuarioController::class);
-                $controller->listarTodo($rolId);
+                $container->get(UsuarioController::class)->listarTodo($rolId);
             });
 
-            // Crear administrador
-            $app->post('/crear', function () use ($app, $container) {
-                $datos = json_decode($app->request->getBody(), true);
-                $controller = $container->get(UsuarioController::class);
-                $controller->crearAdmin($datos);
+            // Crear
+            $app->post('/crear', function () use ($container, $getJson) {
+                $container->get(UsuarioController::class)->crearAdmin($getJson());
             });
 
-            // Editar administrador
-            $app->put('/editar/:id', function ($id) use ($app, $container){
-                $datos = json_decode($app->request->getBody(), true);
-                $controller = $container->get(UsuarioController::class);
-                $controller->editarAdmin($id, $datos);
+            // Editar
+            $app->put('/editar/:id', function ($id) use ($container, $getJson) {
+                $container->get(UsuarioController::class)->editarAdmin($id, $getJson());
             });
 
-            // Eliminar administrador
+            // Eliminar
             $app->delete('/:id', function ($id) use ($app, $container) {
-                // El middleware AuthMiddleware ya inyectó el usuario en la app
+                /** @var \stdClass $usuarioLogueado (Documentamos la magia para el IDE) */
                 $usuarioLogueado = $app->usuario; 
                 
-                $controller = $container->get(UsuarioController::class);
-                $controller->eliminarAdmin($id, $usuarioLogueado);
+                $container->get(UsuarioController::class)->eliminarAdmin($id, $usuarioLogueado);
             });
         });
 
-        // Aquí irían otras rutas protegidas de usuario normal...
+        // --- SUB-GRUPO USUARIO NORMAL (Futuro) ---
+        // $app->group('/perfil', ...);
 
-    }); // Fin del grupo protegido
-
-}); // Fin del grupo /usuarios
+    });
+});
