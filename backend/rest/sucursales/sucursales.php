@@ -5,55 +5,61 @@ use App\Middleware\AuthMiddleware;
 use App\Middleware\ActiveUserMiddleware;
 use App\Middleware\RolMiddleware;
 use App\Constants\Roles;
+use App\Utils\ApiResponse;
 
 /** @var \Slim\Slim $app */
 $container = $app->di;
 
-// GRUPO PRINCIPAL /sucursales
-// 1. AuthMiddleware: Valida token JWT.
-// 2. ActiveUserMiddleware: Valida que el usuario no esté baneado en BD.
-$app->group('/sucursales', 
-    AuthMiddleware::verificar($app), 
-    ActiveUserMiddleware::verificar($app),
-    function () use ($app, $container) {
-
-    // --- RUTAS DE LECTURA (Cualquier usuario logueado) ---
+// =============================================================================
+// HELPER: Decodificador JSON Seguro
+// =============================================================================
+$getJson = function () use ($app) {
+    $body = $app->request->getBody();
+    $data = json_decode($body, true);
     
-    $app->get('/listar', function () use ($app, $container) {
-        /** @var \Slim\Slim $app */
-        $controller = $container->get(SucursalController::class);
-        $controller->listar();
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $app->response->status(400);
+        echo ApiResponse::alerta(["JSON inválido o mal formado."], []); 
+        $app->stop();
+    }
+    return $data;
+};
+
+// =============================================================================
+// MIDDLEWARES (Instancia Única)
+// =============================================================================
+$auth     = AuthMiddleware::verificar($app);
+$active   = ActiveUserMiddleware::verificar($app);
+$rolAdmin = RolMiddleware::verificar($app, [Roles::ADMIN]);
+
+// =============================================================================
+// RUTAS DE SUCURSALES
+// =============================================================================
+
+$app->group('/sucursales', function () use ($app, $container, $getJson, $auth, $active, $rolAdmin) {
+
+    // 1. LISTAR (GET /listar)
+    // Accesible para cualquier usuario logueado (Admin, PM o User)
+    $app->get('/listar', $auth, $active, function () use ($container) {
+        $container->get(SucursalController::class)->listar();
     });
 
     // --- RUTAS ADMINISTRATIVAS (Solo ADMIN) ---
-    // Agrupamos las rutas de escritura y aplicamos el RolMiddleware
-    
-    $app->group('/', RolMiddleware::verificar($app, [Roles::ADMIN]), function () use ($app, $container) {
-        
-        /** @var \Slim\Slim $app */
+    // Aplicamos $rolAdmin explícitamente en cada una.
 
-        // Crear
-        $app->post('/crear', function () use ($app, $container) {
-            $datos = json_decode($app->request->getBody(), true);
-            $controller = $container->get(SucursalController::class);
-            $controller->crear($datos);
-        });
+    // 2. CREAR (POST /crear)
+    $app->post('/crear', $auth, $active, $rolAdmin, function () use ($container, $getJson) {
+        $container->get(SucursalController::class)->crear($getJson());
+    });
 
-        // Editar
-        $app->put('/editar/:id', function ($id) use ($app, $container){
-            $datos = json_decode($app->request->getBody(), true);
-            $controller = $container->get(SucursalController::class);
-            $controller->editar($id, $datos);
-        });
+    // 3. EDITAR (PUT /editar/:id)
+    $app->put('/editar/:id', $auth, $active, $rolAdmin, function ($id) use ($container, $getJson) {
+        $container->get(SucursalController::class)->editar($id, $getJson());
+    });
 
-        // Eliminar (Soft Delete)
-        $app->delete('/:id', function ($id) use ($app, $container) {
-            // Nota: Ya no necesitamos pasar el usuarioLogueado al controller,
-            // porque la seguridad ya la validó el Middleware.
-            $controller = $container->get(SucursalController::class);
-            $controller->eliminar($id);
-        });
-
+    // 4. ELIMINAR (DELETE /:id)
+    $app->delete('/:id', $auth, $active, $rolAdmin, function ($id) use ($container) {
+        $container->get(SucursalController::class)->eliminar($id);
     });
 
 });

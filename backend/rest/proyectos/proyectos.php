@@ -5,57 +5,72 @@ use App\Middleware\AuthMiddleware;
 use App\Middleware\ActiveUserMiddleware;
 use App\Middleware\RolMiddleware;
 use App\Constants\Roles;
+use App\Utils\ApiResponse;
 
 /** @var \Slim\Slim $app */
 $container = $app->di;
 
-$app->group('/proyectos', 
-    AuthMiddleware::verificar($app), 
-    ActiveUserMiddleware::verificar($app),
-    function () use ($app, $container) {
+// =============================================================================
+// HELPER: Decodificador JSON Seguro (DRY)
+// =============================================================================
+$getJson = function () use ($app) {
+    $body = $app->request->getBody();
+    $data = json_decode($body, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $app->response->status(400);
+        echo ApiResponse::alerta(["JSON inválido o mal formado."], []); 
+        $app->stop();
+    }
+    return $data;
+};
 
-    // Listar (con filtros opcionales por query string)
-    $app->get('/', function () use ($app, $container) {
-        $filtros = $app->request->get(); // Extraemos query params
-        $controller = $container->get(ProyectoController::class);
-        $controller->listar($filtros);
+// =============================================================================
+// MIDDLEWARES (Instancia Única)
+// =============================================================================
+$auth       = AuthMiddleware::verificar($app);
+$active     = ActiveUserMiddleware::verificar($app);
+// Definimos quién puede escribir (Admin + PM)
+$rolAdminPM = RolMiddleware::verificar($app, [Roles::ADMIN, Roles::PROJECT_MANAGER]);
+
+// =============================================================================
+// RUTAS DE PROYECTOS
+// =============================================================================
+
+$app->group('/proyectos', function () use ($app, $container, $getJson, $auth, $active, $rolAdminPM) {
+
+    // 1. LISTAR (GET /)
+    // Auth + Active
+    $app->get('/', $auth, $active, function () use ($app, $container) {
+        $filtros = $app->request->get(); // Extraemos query params (?sucursal_id=1)
+        $container->get(ProyectoController::class)->listar($filtros);
     });
 
-    $app->get('/:id', function ($id) use ($app, $container) {
-        $controller = $container->get(ProyectoController::class);
-        $controller->obtenerPorId($id);
+    // 2. OBTENER POR ID (GET /:id)
+    // Auth + Active
+    $app->get('/:id', $auth, $active, function ($id) use ($container) {
+        $container->get(ProyectoController::class)->obtenerPorId($id);
     });
 
-    // Rutas de Escritura (Admin/PM)
-    $rolesPermitidos = [Roles::ADMIN, Roles::PROJECT_MANAGER];
+    // 3. CREAR (POST /)
+    // Auth + Active + Rol (Admin/PM)
+    $app->post('/', $auth, $active, $rolAdminPM, function () use ($app, $container, $getJson) {
+        // Obtenemos el ID del usuario logueado (inyectado por ActiveUserMiddleware)
+        $creadorId = $app->usuario->usuario_id; 
 
-    $app->group('/', RolMiddleware::verificar($app, $rolesPermitidos), function () use ($app, $container) {
-        
-        // Crear
-        $app->post('/', function () use ($app, $container) {
-            // EXTRACCIÓN: Aquí sacamos los datos de Slim
-            $datos = json_decode($app->request->getBody(), true);
-            $creadorId = $app->usuario->usuario_id; // Y el usuario del token
+        $container->get(ProyectoController::class)->crear($getJson(), $creadorId);
+    });
 
-            $controller = $container->get(ProyectoController::class);
-            // INYECCIÓN: Se los pasamos al controlador
-            $controller->crear($datos, $creadorId);
-        });
+    // 4. EDITAR (PUT /:id)
+    // Auth + Active + Rol (Admin/PM)
+    $app->put('/:id', $auth, $active, $rolAdminPM, function ($id) use ($container, $getJson) {
+        $container->get(ProyectoController::class)->editar($id, $getJson());
+    });
 
-        // Editar
-        $app->put('/:id', function ($id) use ($app, $container){
-            $datos = json_decode($app->request->getBody(), true);
-            
-            $controller = $container->get(ProyectoController::class);
-            $controller->editar($id, $datos);
-        });
-
-        // Eliminar
-        $app->delete('/:id', function ($id) use ($app, $container) {
-            $controller = $container->get(ProyectoController::class);
-            $controller->eliminar($id);
-        });
-
+    // 5. ELIMINAR (DELETE /:id)
+    // Auth + Active + Rol (Admin/PM)
+    $app->delete('/:id', $auth, $active, $rolAdminPM, function ($id) use ($container) {
+        $container->get(ProyectoController::class)->eliminar($id);
     });
 
 });

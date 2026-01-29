@@ -7,18 +7,25 @@ use App\Middleware\ActiveUserMiddleware;
 /** @var \Slim\Slim $app */
 $container = $app->di;
 
-// GRUPO DATAMASTER
-// Protegido: Solo usuarios con Token válido y Cuenta Activa
-$app->group('/datamaster', 
-    AuthMiddleware::verificar($app), 
-    ActiveUserMiddleware::verificar($app),
-    function () use ($app, $container) {
+// =============================================================================
+// MIDDLEWARES (Instancia Única)
+// =============================================================================
+$auth   = AuthMiddleware::verificar($app);
+$active = ActiveUserMiddleware::verificar($app);
 
-    // Ruta única para hidratar todos los selectores del frontend
-    $app->get('/catalogos', function () use ($app, $container) {
-        /** @var DataMasterController $controller */
-        $controller = $container->get(DataMasterController::class);
-        $controller->obtenerCatalogos();
+// =============================================================================
+// RUTAS DATAMASTER
+// =============================================================================
+
+$app->group('/datamaster', function () use ($app, $container, $auth, $active) {
+
+    /**
+     * Ruta única para hidratar todos los selectores del frontend
+     * GET /datamaster/catalogos
+     * Auth + Active
+     */
+    $app->get('/catalogos', $auth, $active, function () use ($container) {
+        $container->get(DataMasterController::class)->obtenerCatalogos();
     });
 
 });
