@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Controllers\UsuarioController;
@@ -5,93 +6,82 @@ use App\Middleware\AuthMiddleware;
 use App\Middleware\RolMiddleware;
 use App\Middleware\ActiveUserMiddleware;
 use App\Constants\Roles;
-
+use App\Utils\ApiResponse;
 /** * @var \Slim\Slim $app 
  * @var \DI\Container $container
  */
 $container = $app->di;
 
 // =============================================================================
-// HELPER LOCAL: Parseo de JSON seguro (Solución al DRY)
+// HELPER LOCAL: Parseo de JSON seguro (DRY Pattern)
 // =============================================================================
-// Esto evita repetir json_decode en cada ruta y maneja errores de sintaxis.
 $getJson = function () use ($app) {
     $body = $app->request->getBody();
     $data = json_decode($body, true);
     
     if (json_last_error() !== JSON_ERROR_NONE) {
-        // Si el JSON está mal formado, detenemos todo aquí mismo.
-        // Usamos ApiResponse (o el formato manual si prefieres no importarlo aquí)
         $app->response->status(400);
-        $app->response->headers->set('Content-Type', 'application/json');
-        echo json_encode(['tipo' => 2, 'mensajes' => ['JSON inválido o mal formado.'], 'data' => []]);
+        // AHORA SÍ: Usamos tu estándar ApiResponse
+        echo ApiResponse::alerta( ["JSON inválido o mal formado."], []); 
         $app->stop();
     }
     return $data;
 };
 
 // =============================================================================
+// PREPARACIÓN DE MIDDLEWARES (Instanciación Única)
+// =============================================================================
+// Creamos las instancias de seguridad una sola vez para optimizar memoria.
+// Luego las pasamos como variables a cada ruta que las necesite.
+
+$auth       = AuthMiddleware::verificar($app);
+$active     = ActiveUserMiddleware::verificar($app);
+$rolAdmin   = RolMiddleware::verificar($app, [Roles::ADMIN]);
+
+// =============================================================================
 // RUTAS DE USUARIOS
 // =============================================================================
 
-$app->group('/usuarios', function () use ($app, $container, $getJson) {
+$app->group('/usuarios', function () use ($app, $container, $getJson, $auth, $active, $rolAdmin) {
 
     // -------------------------------------------------------------------------
-    // 1. ZONA PÚBLICA
+    // 1. ZONA PÚBLICA (Sin Middlewares de seguridad)
     // -------------------------------------------------------------------------
     
     $app->post('/login', function () use ($container, $getJson) {
-        $controller = $container->get(UsuarioController::class);
-        $controller->login($getJson()); // ¡Mira qué limpio!
+        $container->get(UsuarioController::class)->login($getJson());
     });
 
     // -------------------------------------------------------------------------
-    // 2. ZONA PROTEGIDA (Auth + Active + Roles)
+    // 2. ZONA ADMIN
     // -------------------------------------------------------------------------
+    // Usamos group() solo para el prefijo de URL '/admin'.
+    // La seguridad ($auth, $active, $rolAdmin) se inyecta en cada verbo HTTP.
     
-    // Definimos los middlewares de seguridad básica
-    $seguridadBasica = [
-        AuthMiddleware::verificar($app),
-        ActiveUserMiddleware::verificar($app)
-    ];
-
-    // GRUPO GENERAL PROTEGIDO
-    // Usamos call_user_func_array para aplicar los middlewares sin anidar otro grupo innecesario
-    // (Nota: En Slim 2, para aplicar array de middlewares a un grupo, la sintaxis varía, 
-    // mantenemos el anidamiento mínimo necesario pero organizado).
-    
-    $app->group('/', $seguridadBasica[0], $seguridadBasica[1], function () use ($app, $container, $getJson) {
-
-        // --- SUB-GRUPO ADMIN ---
-        $app->group('/admin', RolMiddleware::verificar($app, [Roles::ADMIN]), function () use ($app, $container, $getJson) {
+    $app->group('/admin', function () use ($app, $container, $getJson, $auth, $active, $rolAdmin) {
             
-            // Listar
-            $app->get('/listar', function () use ($app, $container) {
-                $rolId = $app->request->get('rol_id');
-                $container->get(UsuarioController::class)->listarTodo($rolId);
-            });
-
-            // Crear
-            $app->post('/crear', function () use ($container, $getJson) {
-                $container->get(UsuarioController::class)->crearAdmin($getJson());
-            });
-
-            // Editar
-            $app->put('/editar/:id', function ($id) use ($container, $getJson) {
-                $container->get(UsuarioController::class)->editarAdmin($id, $getJson());
-            });
-
-            // Eliminar
-            $app->delete('/:id', function ($id) use ($app, $container) {
-                /** @var \stdClass $usuarioLogueado (Documentamos la magia para el IDE) */
-                $usuarioLogueado = $app->usuario; 
-                
-                $container->get(UsuarioController::class)->eliminarAdmin($id, $usuarioLogueado);
-            });
+        // LISTAR: Requiere Auth + Active + Admin
+        $app->get('/listar', $auth, $active, $rolAdmin, function () use ($app, $container) {
+            $rolId = $app->request->get('rol_id');
+            $container->get(UsuarioController::class)->listarTodo($rolId);
         });
 
-        // --- SUB-GRUPO USUARIO NORMAL (Futuro) ---
-        // $app->group('/perfil', ...);
+        // CREAR: Requiere Auth + Active + Admin
+        $app->post('/crear', $auth, $active, $rolAdmin, function () use ($container, $getJson) {
+            $container->get(UsuarioController::class)->crearAdmin($getJson());
+        });
 
+        // EDITAR: Requiere Auth + Active + Admin
+        $app->put('/editar/:id', $auth, $active, $rolAdmin, function ($id) use ($container, $getJson) {
+            $container->get(UsuarioController::class)->editarAdmin($id, $getJson());
+        });
+
+        // ELIMINAR: Requiere Auth + Active + Admin
+        $app->delete('/:id', $auth, $active, $rolAdmin, function ($id) use ($app, $container) {
+            // $app->usuario es inyectado previamente por AuthMiddleware
+            $usuarioLogueado = $app->usuario; 
+            $container->get(UsuarioController::class)->eliminarAdmin($id, $usuarioLogueado);
+        });
     });
+
 });
