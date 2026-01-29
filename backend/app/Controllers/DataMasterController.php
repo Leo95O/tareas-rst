@@ -27,13 +27,13 @@ class DataMasterController
                 'prioridades'       => $this->repository->obtenerPrioridades()
             ];
 
-            ApiResponse::exito("Catálogos cargados correctamente.", $data);
+            echo ApiResponse::exito("Catálogos cargados correctamente.", $data);
         } catch (Exception $e) {
             // Registramos el error técnico para depuración interna
             error_log("Error en DataMasterController::obtenerCatalogos: " . $e->getMessage());
             
             // Respuesta genérica al cliente por seguridad
-            ApiResponse::error("Ocurrió un error interno al intentar cargar los catálogos del sistema.");
+            echo ApiResponse::error("Ocurrió un error interno al intentar cargar los catálogos del sistema.");
         }
     }
 }

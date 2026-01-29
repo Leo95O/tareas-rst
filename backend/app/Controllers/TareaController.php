@@ -25,12 +25,12 @@ class TareaController
                 return $t->toArray();
             }, $lista);
 
-            ApiResponse::exito("Listado de tareas.", $data);
+           echo ApiResponse::exito("Listado de tareas.", $data);
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en TareaController::listar: " . $e->getMessage());
-            ApiResponse::error("Ocurrió un error al obtener el listado de tareas.");
+            echo ApiResponse::error("Ocurrió un error al obtener el listado de tareas.");
         }
     }
 
@@ -39,12 +39,12 @@ class TareaController
         try {
             $id = $this->tareaService->crearTarea($datos, $creadorId);
             
-            ApiResponse::exito("Tarea creada exitosamente.", ['id' => $id]);
+            echo ApiResponse::exito("Tarea creada exitosamente.", ['id' => $id]);
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en TareaController::crear: " . $e->getMessage());
-            ApiResponse::error("No se pudo crear la tarea por un error interno.");
+            echo ApiResponse::error("No se pudo crear la tarea por un error interno.");
         }
     }
 
@@ -57,12 +57,12 @@ class TareaController
 
             $this->tareaService->editarTarea($id, $datos);
             
-            ApiResponse::exito("Tarea actualizada correctamente.");
+            echo ApiResponse::exito("Tarea actualizada correctamente.");
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en TareaController::editar: " . $e->getMessage());
-            ApiResponse::error("Error inesperado al intentar actualizar la tarea.");
+            echo ApiResponse::error("Error inesperado al intentar actualizar la tarea.");
         }
     }
 
@@ -74,12 +74,12 @@ class TareaController
             }
 
             $this->tareaService->asignarTarea($id, $usuarioId);
-            ApiResponse::exito("Tarea asignada correctamente.");
+            echo ApiResponse::exito("Tarea asignada correctamente.");
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en TareaController::asignar: " . $e->getMessage());
-            ApiResponse::error("Ocurrió un error al procesar la asignación.");
+            echo ApiResponse::error("Ocurrió un error al procesar la asignación.");
         }
     }
 
@@ -92,12 +92,12 @@ class TareaController
 
             $this->tareaService->eliminarTarea($id);
             
-            ApiResponse::exito("Tarea eliminada correctamente.");
+            echo ApiResponse::exito("Tarea eliminada correctamente.");
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en TareaController::eliminar: " . $e->getMessage());
-            ApiResponse::error("No se pudo completar la eliminación de la tarea.");
+            echo ApiResponse::error("No se pudo completar la eliminación de la tarea.");
         }
     }
 }

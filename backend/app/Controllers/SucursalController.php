@@ -26,12 +26,12 @@ class SucursalController
                 return $s->toArray();
             }, $lista);
 
-            ApiResponse::exito("Listado de sucursales.", $data);
+            echo ApiResponse::exito("Listado de sucursales.", $data);
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en SucursalController::listar: " . $e->getMessage());
-            ApiResponse::error("Ocurrió un error al obtener el listado de sucursales.");
+            echo ApiResponse::error("Ocurrió un error al obtener el listado de sucursales.");
         }
     }
 
@@ -42,12 +42,12 @@ class SucursalController
             
             $id = $this->sucursalService->crearSucursal($datos);
             
-            ApiResponse::exito("Sucursal creada correctamente.", ['id' => $id]);
+            echo ApiResponse::exito("Sucursal creada correctamente.", ['id' => $id]);
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en SucursalController::crear: " . $e->getMessage());
-            ApiResponse::error("Ocurrió un error interno al intentar crear la sucursal.");
+            echo ApiResponse::error("Ocurrió un error interno al intentar crear la sucursal.");
         }
     }
 
@@ -64,12 +64,12 @@ class SucursalController
 
             $this->sucursalService->editarSucursal($id, $datos);
             
-            ApiResponse::exito("Sucursal actualizada correctamente.");
+            echo ApiResponse::exito("Sucursal actualizada correctamente.");
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en SucursalController::editar: " . $e->getMessage());
-            ApiResponse::error("Ocurrió un error inesperado al actualizar la sucursal.");
+            echo ApiResponse::error("Ocurrió un error inesperado al actualizar la sucursal.");
         }
     }
 
@@ -82,12 +82,12 @@ class SucursalController
 
             $this->sucursalService->eliminarSucursal($id);
             
-            ApiResponse::exito("Sucursal desactivada correctamente.");
+            echo ApiResponse::exito("Sucursal desactivada correctamente.");
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en SucursalController::eliminar: " . $e->getMessage());
-            ApiResponse::error("No se pudo completar la eliminación de la sucursal.");
+            echo ApiResponse::error("No se pudo completar la eliminación de la sucursal.");
         }
     }
 }

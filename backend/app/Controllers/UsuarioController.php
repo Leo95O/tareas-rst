@@ -36,12 +36,12 @@ class UsuarioController
                 'token' => $tokenJwt
             ];
 
-            ApiResponse::exito("Inicio de sesión exitoso.", $respuesta);
+            echo ApiResponse::exito("Inicio de sesión exitoso.", $respuesta);
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en UsuarioController::login: " . $e->getMessage());
-            ApiResponse::error("Ocurrió un error interno en el servidor.");
+            echo ApiResponse::error("Ocurrió un error interno en el servidor.");
         }
     }
 
@@ -54,12 +54,12 @@ class UsuarioController
                 return $u->toArray();
             }, $lista);
 
-            ApiResponse::exito("Lista de usuarios obtenida.", $data);
+            echo ApiResponse::exito("Lista de usuarios obtenida.", $data);
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en UsuarioController::listarTodo: " . $e->getMessage());
-            ApiResponse::error("No se pudo recuperar la lista de usuarios.");
+            echo ApiResponse::error("No se pudo recuperar la lista de usuarios.");
         }
     }
 
@@ -68,12 +68,12 @@ class UsuarioController
         try {
             UsuarioValidator::validarCreacionAdmin($datos);
             $id = $this->usuarioService->crearUsuarioAdmin($datos);
-            ApiResponse::exito("Usuario creado correctamente.", ['id' => $id]);
+            echo ApiResponse::exito("Usuario creado correctamente.", ['id' => $id]);
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en UsuarioController::crearAdmin: " . $e->getMessage());
-            ApiResponse::error("Error al intentar crear el usuario.");
+            echo ApiResponse::error("Error al intentar crear el usuario.");
         }
     }
 
@@ -86,12 +86,12 @@ class UsuarioController
 
             UsuarioValidator::validarEdicionAdmin($datos);
             $this->usuarioService->editarUsuarioAdmin($id, $datos);
-            ApiResponse::exito("Usuario actualizado correctamente.");
+            echo ApiResponse::exito("Usuario actualizado correctamente.");
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en UsuarioController::editarAdmin: " . $e->getMessage());
-            ApiResponse::error("Ocurrió un error al actualizar el usuario.");
+            echo ApiResponse::error("Ocurrió un error al actualizar el usuario.");
         }
     }
 
@@ -103,12 +103,12 @@ class UsuarioController
             }
 
             $this->usuarioService->eliminarUsuarioAdmin($id, $usuarioLogueado->usuario_id);
-            ApiResponse::exito("Usuario eliminado correctamente.");
+            echo ApiResponse::exito("Usuario eliminado correctamente.");
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en UsuarioController::eliminarAdmin: " . $e->getMessage());
-            ApiResponse::error("No se pudo completar la eliminación del usuario.");
+            echo ApiResponse::error("No se pudo completar la eliminación del usuario.");
         }
     }
 }

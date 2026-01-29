@@ -17,13 +17,13 @@ class RolMiddleware
             $usuario = isset($app->usuario) ? $app->usuario : null;
 
             if (!$usuario) {
-                ApiResponse::error("Sesión no válida o expirada.", [], 401);
+                echo ApiResponse::error("Sesión no válida o expirada.", []);
                 $app->stop();
             }
 
             // 2. Verificar Rol
             if (!in_array($usuario->rol_id, $rolesPermitidos)) {
-                ApiResponse::error("Acceso denegado. Permisos insuficientes.", [], 403);
+                echo ApiResponse::error("Acceso denegado. Permisos insuficientes.", []);
                 $app->stop();
             }
         };

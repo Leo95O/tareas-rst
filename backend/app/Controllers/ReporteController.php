@@ -46,13 +46,13 @@ class ReporteController
                 $data['lista_vencidas'] = $vencidas;
             }
 
-            ApiResponse::exito("Datos del dashboard cargados correctamente.", $data);
+            echo ApiResponse::exito("Datos del dashboard cargados correctamente.", $data);
 
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en ReporteController::dashboard: " . $e->getMessage());
-            ApiResponse::error("Ocurrió un error interno al generar los datos del dashboard.");
+            echo ApiResponse::error("Ocurrió un error interno al generar los datos del dashboard.");
         }
     }
 
@@ -67,13 +67,13 @@ class ReporteController
                 }
             }
 
-            ApiResponse::exito("Estadísticas de carga de trabajo.", ['carga_usuarios' => $carga]);
+            echo ApiResponse::exito("Estadísticas de carga de trabajo.", ['carga_usuarios' => $carga]);
 
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en ReporteController::adminStats: " . $e->getMessage());
-            ApiResponse::error("Error al procesar las estadísticas administrativas.");
+            echo ApiResponse::error("Error al procesar las estadísticas administrativas.");
         }
     }
 }

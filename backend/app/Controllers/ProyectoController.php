@@ -25,12 +25,12 @@ class ProyectoController
                 return $p->toArray();
             }, $lista);
 
-            ApiResponse::exito("Listado de proyectos.", $data);
+            echo ApiResponse::exito("Listado de proyectos.", $data);
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en ProyectoController::listar: " . $e->getMessage());
-            ApiResponse::error("Ocurrió un error al obtener el listado de proyectos.");
+            echo ApiResponse::error("Ocurrió un error al obtener el listado de proyectos.");
         }
     }
 
@@ -42,12 +42,12 @@ class ProyectoController
             }
 
             $proyecto = $this->proyectoService->obtenerProyectoPorId($id);
-            ApiResponse::exito("Proyecto recuperado.", $proyecto->toArray());
+            echo ApiResponse::exito("Proyecto recuperado.", $proyecto->toArray());
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en ProyectoController::obtenerPorId: " . $e->getMessage());
-            ApiResponse::error("No se pudo recuperar el proyecto solicitado.");
+            echo ApiResponse::error("No se pudo recuperar el proyecto solicitado.");
         }
     }
 
@@ -56,12 +56,12 @@ class ProyectoController
         try {
             $id = $this->proyectoService->crearProyecto($datos, $creadorId);
             
-            ApiResponse::exito("Proyecto creado correctamente.", ['id' => $id]);
+            echo ApiResponse::exito("Proyecto creado correctamente.", ['id' => $id]);
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en ProyectoController::crear: " . $e->getMessage());
-            ApiResponse::error("Error interno al intentar crear el proyecto.");
+            echo ApiResponse::error("Error interno al intentar crear el proyecto.");
         }
     }
 
@@ -74,12 +74,12 @@ class ProyectoController
 
             $this->proyectoService->editarProyecto($id, $datos);
             
-            ApiResponse::exito("Proyecto actualizado correctamente.");
+            echo ApiResponse::exito("Proyecto actualizado correctamente.");
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en ProyectoController::editar: " . $e->getMessage());
-            ApiResponse::error("Ocurrió un error inesperado al actualizar el proyecto.");
+            echo ApiResponse::error("Ocurrió un error inesperado al actualizar el proyecto.");
         }
     }
 
@@ -92,12 +92,12 @@ class ProyectoController
 
             $this->proyectoService->eliminarProyecto($id);
             
-            ApiResponse::exito("Proyecto eliminado correctamente.");
+            echo ApiResponse::exito("Proyecto eliminado correctamente.");
         } catch (ValidationException $e) {
-            ApiResponse::alerta($e->getMessage());
+            echo ApiResponse::alerta($e->getMessage());
         } catch (Exception $e) {
             error_log("Error en ProyectoController::eliminar: " . $e->getMessage());
-            ApiResponse::error("No se pudo completar la eliminación del proyecto.");
+            echo ApiResponse::error("No se pudo completar la eliminación del proyecto.");
         }
     }
 }

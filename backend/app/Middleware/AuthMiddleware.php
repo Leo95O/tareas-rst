@@ -33,7 +33,7 @@ class AuthMiddleware
             $authHeader = $req->headers->get('Authorization');
 
             if (!$authHeader || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-                ApiResponse::error("Token no proporcionado o formato inválido.", [], 401);
+                echo ApiResponse::error("Token no proporcionado o formato inválido.", []);
                 $app->stop();
             }
 
@@ -51,7 +51,7 @@ class AuthMiddleware
                 $app->usuario = $usuarioDecodificado;
 
             } catch (Exception $e) {
-                ApiResponse::error("Acceso denegado: " . $e->getMessage(), [], 401);
+                echo ApiResponse::error("Acceso denegado: " . $e->getMessage(), []);
                 $app->stop();
             }
         };

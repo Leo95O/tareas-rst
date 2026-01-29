@@ -39,13 +39,13 @@ class ActiveUserMiddleware
                 // 4. Validaciones de Seguridad
                 if (!$usuarioDb) {
                     // El usuario fue borrado físicamente o no existe
-                    ApiResponse::error("Credenciales revocadas. Usuario no encontrado.", [], 401);
+                  echo ApiResponse::error("Credenciales revocadas. Usuario no encontrado.", []);
                     $app->stop();
                 }
 
                 if (!$usuarioDb->estaActivo()) {
                     // El usuario existe pero fue desactivado (Soft Delete o Ban)
-                    ApiResponse::error("Sesión caducada. Tu cuenta ha sido desactivada.", [], 401);
+                    echo ApiResponse::error("Sesión caducada. Tu cuenta ha sido desactivada.", []);
                     $app->stop();
                 }
 
@@ -56,7 +56,7 @@ class ActiveUserMiddleware
 
             } catch (\Exception $e) {
                 // Si falla la BD, denegamos acceso por seguridad (Fail Close)
-                ApiResponse::error("Error de seguridad interno: " . $e->getMessage(), [], 500);
+                echo ApiResponse::error("Error de seguridad interno: " . $e->getMessage(), []);
                 $app->stop();
             }
         };
