@@ -61,6 +61,7 @@ require_once __DIR__ . '/../rest/sucursales/sucursales.php';
 require_once __DIR__ . '/../rest/proyectos/proyectos.php';
 require_once __DIR__ . '/../rest/tareas/tareas.php';
 require_once __DIR__ . '/../rest/reportes/reportes.php';
+require_once __DIR__ . '/../rest/auth/auth.php';
 
 
 $app->run();

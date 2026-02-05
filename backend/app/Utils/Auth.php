@@ -25,26 +25,32 @@ class Auth
 }
 
 
-public static function generarToken($usuario)
+public static function generarToken($usuario, $sucursalData = null)
     {
         $secretKey = self::getSecretKey();
-
         $ahora = time();
-        $vence = $ahora + (60 * 60 * 24); 
+        $vence = $ahora + (60 * 60 * 24); // 24 horas
+
+        $dataPayload = [
+            'id'     => $usuario->usuario_id, // Estandarizamos a 'id' para que coincida con middlewares
+            'nombre' => $usuario->usuario_nombre,
+            'correo' => $usuario->usuario_correo,
+            'rol'    => $usuario->rol_id
+        ];
+
+        // INYECCIÓN DINÁMICA: Si hay sucursal, la agregamos al token
+        if ($sucursalData) {
+            $dataPayload['sucursal'] = [
+                'id'     => $sucursalData['sucursal_id'],
+                'nombre' => $sucursalData['sucursal_nombre']
+            ];
+        }
 
         $payload = [
-
-            'iat' => $ahora,               
-            'exp' => $vence,               
-            'sub' => $usuario->usuario_id, 
- 
-            
-            'data' => [
-
-                'nombre' => $usuario->usuario_nombre,
-                'correo' => $usuario->usuario_correo,
-                'rol'    => $usuario->rol_id
-            ]
+            'iat'  => $ahora,
+            'exp'  => $vence,
+            'sub'  => $usuario->usuario_id,
+            'data' => $dataPayload
         ];
 
         return JWT::encode($payload, $secretKey);
